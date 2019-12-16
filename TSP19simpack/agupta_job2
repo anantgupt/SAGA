@@ -1,0 +1,7 @@
+#!/bin/bash
+#PBS -l nodes=1:ppn=12
+#PBS -l walltime=1:00:00
+#PBS -M anantgupta@ucsb.edu
+# serial job on knot
+cd $PBS_O_WORKDIR
+python script_test4.py

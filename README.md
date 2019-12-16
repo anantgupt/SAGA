@@ -1,2 +1,1 @@
-# SAGA
-Spatial data association using Geometric Assistance
+# GraphAssociation
