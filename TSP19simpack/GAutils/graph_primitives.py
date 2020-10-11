@@ -475,7 +475,7 @@ def Relax(Gfix, sel_sigs, sensors, glen, cfgp): # Slim version
         lg_thres[1][i]=-np.inf
     while hc<hN and minP>=min_chain_leng:
 #        print(lg_thres)
-        for h in range(Ns- min_chain_leng+1): # was Ns - cfgp['Tlen']+1, range(hN)
+        for h in range(cfgp['rob']+1): # was Ns - cfgp['Tlen']+1, range(hN)
     #        print('Graph has {} nodes.'.format(sum(len(g) for g in G)))
     #        lg_thres = np.array([[scale[0]*chi2.isf(cfgp['al_pfa'], 2*i, loc=0, scale=1) for i in range(1,Ns+1)],
     #                    [scale[1]*chi2.isf(cfgp['ag_pfa'], 2*i, loc=0, scale=1) for i in range(1,Ns+1)]])
@@ -496,14 +496,14 @@ def Relax(Gfix, sel_sigs, sensors, glen, cfgp): # Slim version
                 if minP<min_chain_leng: break
                 G = add_skipedge(G, sensors, Ns-minP)# Only to be called when minP decrements
                 hc+=1
-        if stopping_cr or cfgp['mode'][-4:]=='heap': break # Only 1 iter for heap mode
+        if stopping_cr: break # Only 1 iter for heap mode
         lg_thres=[lgt*sc for (lgt,sc) in zip(lg_thres, scale)] # Relax LLR thres outer loop
         if cfgp['mode'][-1]!='2': # Nominal mode
             G = remove_skipedge(G) # NOTE: reset skip edges
     # Using heap to get leftover targets
-    if cfgp['mode'][-4:]=='heap':
-        # Make dict of remaining nodes keyed by sensor id, r, d
-        print('Wrong mode! check config. ')
+    # if cfgp['mode'][-4:]=='heap':
+    #     # Make dict of remaining nodes keyed by sensor id, r, d
+    #     print('Wrong mode! check config. ')
     return glen, L3
 
 def DFS(G, nd, sig, sel_sigs, pid, sensors, cfgp, minP, hq, lg_thres, opt=[True,False,False]): # code cleanup
@@ -512,7 +512,7 @@ def DFS(G, nd, sig, sel_sigs, pid, sensors, cfgp, minP, hq, lg_thres, opt=[True,
     L3 = np.zeros(2) # Count edges visited
     ag_pfa, al_pfa, rd_wt = cfgp['ag_pfa'],cfgp['al_pfa'],cfgp['rd_wt']
     if not nd.visited:# Check if tracks could be joined
-        childs, gcs = get_order(G, nd, nd.lkf, sig, sensors, cfgp['mode'][:5]=='SPEKF')
+        childs, gcs = get_order(G, nd, nd.lkf, sig, sensors, cfgp['mode']=='NN')
         L3[0]+=len(childs) # If counting all edges, make 1
         for (ndc, gcc) in zip(childs, gcs):# Compute costs for all neighbors
             if not path_check(G, sig, pid): break # Added to stop DFS if parent is visited!
@@ -520,40 +520,38 @@ def DFS(G, nd, sig, sel_sigs, pid, sensors, cfgp, minP, hq, lg_thres, opt=[True,
                 pnext = cp.copy(pid)
                 pnext.append(ndc.oid)
                 ndc_sig = cp.copy(sig)
-                if cfgp['mode'][-4:]!='heap' and ndc_sig.N>2 and cfgp['mode'][-1]!='4' and gcc>lg_thres[1][-1]: # Relax/SPEKF Algo
+                if ndc_sig.N>2 and cfgp['mode'][-1]!='4' and gcc>lg_thres[1][-1]: # SAGA/NN Algo
                     continue
-                if cfgp['mode'][:5]=='SPEKF':
+                if cfgp['mode']=='NN':
                     ndc_sig.add_update_ekf(ndc.r, ndc.d, ndc.g, ndc.sid, sensors)
                 else:
                     ndc_sig.add_update3(ndc.r, ndc.d, ndc.g, ndc.sid, sensors)
                 if ndc_sig.N>2:
                     
-                    if cfgp['mode'][-4:]!='heap': # For heap mode don't stop early
-                        if cfgp['mode'][-1]!='4':
-                            g_cost = sum(ndc_sig.gc)
-                            if g_cost>lg_thres[1][-1]:
-                                continue
-                        else: # Relax4 algorithm (Slower)
-                            L3[1]+=1
-                            l_cost, g_cost = mle.est_pathllr(ndc_sig, sensors, minP+2, rd_wt)
-                            if l_cost>lg_thres[0][-1]: # Avoid going deeper as cost only increases
-                                continue
+                    if cfgp['mode'][-1]!='4':
+                        g_cost = sum(ndc_sig.gc)
+                        if g_cost>lg_thres[1][-1]:
+                            continue
+                    else: # Relax4 algorithm (Slower)
+                        L3[1]+=1
+                        l_cost, g_cost = mle.est_pathllr(ndc_sig, sensors, minP+2, rd_wt)
+                        if l_cost>lg_thres[0][-1]: # Avoid going deeper as cost only increases
+                            continue
                 L3+=DFS(G, ndc, ndc_sig, sel_sigs, pnext, sensors, cfgp, minP, hq, lg_thres, opt)
 
 
         if not nd.visited:# check for min cost(if node not used)
             if path_check(G, sig, pid): # Check that no member of chain is already visited
-                if cfgp['mode'][-4:]!='heap':
-                    if sig.N>=minP and sig.gc is not None: # Atleast 3 elements
-                        l_cost, g_cost = mle.est_pathllr(sig, sensors, minP+2, rd_wt);
-                        L3[1]+=1 # If ONLY Counting paths, make 1, ELSE 0
-    #                    print(minP, l_cost, lg_thres[0][sig.N-1], g_cost, lg_thres[1][sig.N-1], pid ) #USE THIS TO DEBUG
-                        deg_free = min(sig.N+len(sensors)-minP-1, len(sensors)-1)
-                        if l_cost < lg_thres[0][deg_free] and abs(sum(sig.gc))<lg_thres[1][deg_free]: # Based on CRLB
-                            sig.llr = l_cost
-                            sig.pid = pid
-                            sel_sigs.append(sig)
-                            update_G(G, sig.sindx, pid, True, len(sel_sigs)-1)# Stores id of sig in sel_sigs
+                if sig.N>=minP and sig.gc is not None: # Atleast 3 elements
+                    l_cost, g_cost = mle.est_pathllr(sig, sensors, minP+2, rd_wt);
+                    L3[1]+=1 # If ONLY Counting paths, make 1, ELSE 0
+#                    print(minP, l_cost, lg_thres[0][sig.N-1], g_cost, lg_thres[1][sig.N-1], pid ) #USE THIS TO DEBUG
+                    deg_free = min(sig.N+len(sensors)-minP-1, len(sensors)-1)
+                    if l_cost < lg_thres[0][deg_free] and abs(sum(sig.gc))<lg_thres[1][deg_free]: # Based on CRLB
+                        sig.llr = l_cost
+                        sig.pid = pid
+                        sel_sigs.append(sig)
+                        update_G(G, sig.sindx, pid, True, len(sel_sigs)-1)# Stores id of sig in sel_sigs
                 else: # For Heap mode
                     if sig.N>=minP-1 and sig.gc is not None: # Atleast 3 elements
                         l_cost, g_cost = mle.est_pathllr(sig, sensors, minP+2, rd_wt);
@@ -576,7 +574,6 @@ def DFS(G, nd, sig, sel_sigs, pid, sensors, cfgp, minP, hq, lg_thres, opt=[True,
     return L3
 
 def DFS2(G, nd, sig, sel_sigs, pid, sensors, cfgp, minP, scale=[1e2,1e4], opt=[True,False,False]): # recursive implementation
-    
     cand_sig =[]
     llr_min = np.inf
     L3 = 0 # Count edges visited
@@ -751,59 +748,37 @@ def get_minpaths(G, sensors, mode, cfgp):
     sel_sigs =[] # Note: wt includes the crb_min for range, doppler
     L3 = 0
     glen = [sum(len(g) for g in G)]
-    dispatcher ={'DFS':DFS, 'Brute': Brute, 'SPEKF': Relax, 'Relax': Relax,'Rellr': Rellr, 'Brute_iter': Brute_iter}
-    if mode in ['DFS','Brute']:
-        for i, sobs in enumerate(G):
-            for pid, sobc in enumerate(sobs):
-                if 1:#not sobc.visited:
-                    sig_origin = ob.SignatureTracks(sobc.r, sobc.d, i, sobc.g)# create new signature
-                    dispatcher[mode](G, sobc, sig_origin, sel_sigs, [pid], sensors, cfgp)
-    if mode=='DFS':# Run once again
-        for i, sobs in enumerate(G):
-            for pid, sobc in enumerate(sobs):
-                if 1:#not sobc.visited:
-                    sig_origin = ob.SignatureTracks(sobc.r, sobc.d, i, sobc.g)# create new signature
-                    dispatcher[mode](G, sobc, sig_origin, sel_sigs, [pid], sensors, cfgp)
-        sig_new=[]
-        for sig in sel_sigs:
-            if sig!=None:
-                sig_new.append(sig)
-        sel_sigs= sig_new
-    if mode =='Rellr':
-        glen, L3 = dispatcher[mode[:5]](G, sel_sigs, sensors, glen, cfgp)
-    if mode[:5]=='Relax' or mode[:5]=='SPEKF':#Run with relaxed params
-        if mode[-4:]=='heap':
-            glen, L3 = _heap(G, sel_sigs, sensors, glen, cfgp)
-        else:
-            glen, L3 = dispatcher[mode[:5]](G, sel_sigs, sensors, glen, cfgp)
-    if mode=='Brute_iter':#Run with relaxed params
-        glen, L3 = dispatcher[mode](G, sel_sigs, sensors, glen, cfgp)
+    dispatcher ={'DFS':DFS, 'Brute': Brute, 'NN': Relax, 'SAGA': Relax,'Rellr': Rellr, 'Brute_iter': Brute_iter}
+    # if mode in ['DFS','Brute']:
+    #     for i, sobs in enumerate(G):
+    #         for pid, sobc in enumerate(sobs):
+    #             if 1:#not sobc.visited:
+    #                 sig_origin = ob.SignatureTracks(sobc.r, sobc.d, i, sobc.g)# create new signature
+    #                 dispatcher[mode](G, sobc, sig_origin, sel_sigs, [pid], sensors, cfgp)
+    # if mode=='DFS':# Run once again
+    #     for i, sobs in enumerate(G):
+    #         for pid, sobc in enumerate(sobs):
+    #             if 1:#not sobc.visited:
+    #                 sig_origin = ob.SignatureTracks(sobc.r, sobc.d, i, sobc.g)# create new signature
+    #                 dispatcher[mode](G, sobc, sig_origin, sel_sigs, [pid], sensors, cfgp)
+    #     sig_new=[]
+    #     for sig in sel_sigs:
+    #         if sig!=None:
+    #             sig_new.append(sig)
+    #     sel_sigs= sig_new
+    # if mode =='Rellr':
+    #     glen, L3 = dispatcher[mode[:5]](G, sel_sigs, sensors, glen, cfgp)
+    # if mode=='SAGA' or mode=='NN':#Run with relaxed params
+        # if mode[-4:]=='heap':
+        #     glen, L3 = _heap(G, sel_sigs, sensors, glen, cfgp)
+        # else:
+    glen, L3 = dispatcher[mode](G, sel_sigs, sensors, glen, cfgp)
+    # if mode=='Brute_iter':#Run with relaxed params
+    #     glen, L3 = dispatcher[mode](G, sel_sigs, sensors, glen, cfgp)
 
-    if mode=='Brute':
-        sel_sigs = visit_selsigs(G, sel_sigs)
-        
-    # if not sel_sigs: # If no signature could be found, try finding any feasible path
-    #     flag = False
-    #     if False: # Don't try to find feasible paths, doing this will increasing pos-vel error
-    #         for i, sobs in enumerate(G):
-    #             for pid, sobc in enumerate(sobs): 
-    #                 sig_rnd = ob.SignatureTracks(sobc.r, sobc.d, i, sobc.g)
-    #                 if get_rndsig(G, sobc, sig_rnd, sel_sigs, [pid], sensors):
-    #                     flag = True
-    #                     break
-    #             if flag:
-    #                 break
-    #     if not sel_sigs: # If no feasible target found, create fake signature at origin
-    #         for sid, sensor in enumerate(sensors):
-    #             if sid==0:
-    #                 sig_rnd = ob.SignatureTracks(np.sqrt(sensor.x**2+0.01), 0, sid, 1)
-    #             else:
-    #                 sig_rnd.add_update3(np.sqrt(sensor.x**2+0.01), 0, 1, sid, sensors)
-    #         sel_sigs.append(sig_rnd)
-    #         print('.',end='')#print('No Feasible Targets Found (choosing (0,0.1)). ')
-    #     else:
-    #         print('o',end='')#print('No Targets Found (choosing random feasible path). ')
-            
+    # if mode=='Brute':
+    #     sel_sigs = visit_selsigs(G, sel_sigs)
+    
     return sel_sigs, glen, L3
 
 def get_rndsig(G, nd, sig_rnd, sel_sigs, pid, sensors):

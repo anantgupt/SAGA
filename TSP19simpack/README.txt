@@ -1,0 +1,3 @@
+0. Simulate all protocols analysis using script_all1_test.py (set N_avg as desired, default value is 50). This will create folders for Fig 3-12.
+1. Run gen_ploty.py inside paper_plots folder to generate the plots (It copies and runs create_fig... scripts to respective folders. Also copies Nob-snr results for NOMP from OSPA directory to Fig_9_DFT directory to avoid repeated simulations).
+3. Remember to set Navg correctly while plotting paper plots (Default 50 in simulation and plotting scripts). Otherwise the runtime, no. of operations plots will be incorrect.

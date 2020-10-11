@@ -75,7 +75,7 @@ def compute_ospa(true_scene0, est_scene, sensors, gardat=[], loc_wt=[1,1,1,1], p
 #    err_cn += len(est_scene)-len(true_scene) #(float(c**p*(n-m))/n)**(1/p)
     err_loc = (float(total_loc)/max(ntrue,1))**(1/p) 
     err_pos, err_vel = np.sqrt(float(err_pos)/m) , np.sqrt(float(err_vel)/m)
-    ospa_err = ( float(ospa_loc + max(n-ntrue,0)* (c_pen**p)) / n)**(1/p) # If n>m count extra misses
+    ospa_err = ( float(ospa_loc + max(len(true_scene)-ntrue,0)* (c_pen**p)) / n)**(1/p) # If n>m count extra misses
     ospa_tuple = np.array([ospa_err,err_loc, len(est_scene)-len(true_scene), ntrue, err_pos]) 
     return ospa_tuple, PVerror
     

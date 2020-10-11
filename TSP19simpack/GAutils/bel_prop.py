@@ -26,11 +26,11 @@ def compute_linkage_error(sig, sensors):
     return mean, np.sum(std)#[0]+std[2]
 
 def draw_line_reduction(garda_sel, sensors, scene, est_objects, alpha, plt, ttl=''):
-    x_val = np.array([sensor.x for sensor in sensors])#2*np.arange(4)-3
     for i, gard in enumerate(garda_sel):
         yp = gard.r * gard.d
-        xp = x_val[i] * np.ones(len(yp))
+        xp = (2*i-3) * np.ones(len(yp))
         p1 = plt.plot(xp, yp, 'bo')
+    x_val = np.array([sensor.x for sensor in sensors])#2*np.arange(4)-3
     if not alpha:
         alpha = np.ones(len(est_objects))
     else:
@@ -51,12 +51,11 @@ def draw_line_reduction(garda_sel, sensors, scene, est_objects, alpha, plt, ttl=
     plt.legend([p3[0],p1[0],p2[0]],['True', 'Observation','Estimate'])
     return
 def draw_line_reduction2(garda_sel, sensors, scene, est_objects, alpha, plt, ttl=''):
-    x_val = np.array([sensor.x for sensor in sensors])#2*np.arange(4)-3
     for i, gard in enumerate(garda_sel):
         yp = gard.r * gard.r
-        xp = x_val[i] * np.ones(len(yp))
+        xp = (2*i-3) * np.ones(len(yp))
         p1 = plt.plot(xp, yp, 'bo')
-    
+    x_val = np.array([sensor.x for sensor in sensors])#2*np.arange(4)-3
     if not alpha:
         alpha = np.ones(len(est_objects))
     else:

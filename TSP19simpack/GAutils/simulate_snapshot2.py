@@ -80,11 +80,11 @@ def run_snapshot(scene, sensors, snr, cfgp, seed =int.from_bytes(os.urandom(4), 
     runtime[4] = sum([len(nd.lkf) for g in G1 for nd in g]) # No of edges, get V from glen
     runtime[5],_ = grpr.get_BruteComplexity(G1)
 
-    if cfgp['mode']=='mcf':
+    if cfgp['mode']=='MCF':
         min_gsigs, glen, runtime[6:8] = mcft.get_mcfsigs(garda_sel, sensors, cfgp)
     elif cfgp['mode']=='mcf_all':
         min_gsigs, glen, runtime[6:8] = mcft.get_mcfsigs_all(garda_sel, sensors, cfgp)
-    elif cfgp['mode']=='mle':
+    elif cfgp['mode']=='SAESL':
         min_gsigs, glen, runtime[6:8] = mle.iterative_prune_pht(garda_sel, sensors, cfgp, sum(len(g.r) for g in garda_sel)//2)
     else:
         t=time.time()

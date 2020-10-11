@@ -66,7 +66,7 @@ def main():
     for x in sx:
         sensorsa.append(ob.Sensor(x,0))
         
-    np.random.seed(28)
+    np.random.seed(29)
     seeda = np.random.randint(1000, size=Nf)
     # print('Seeds used:',seeda)
     # TODO NOTE: Min threshold might not be satisfied for all sensors!!

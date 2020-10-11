@@ -42,7 +42,7 @@ osps = [3,3] # 2 is good enuf
 n_Rc = [1,2] # Test with 2,3
 n_pfa = 1e-2 # Optimal is 1e-2 or 2e-2
 # Association
-mode = 'Relax' # Choose:'Brute','DFS','Relax','Brute_iter','mcf','SPEKF','Relax-heap','SPEKF-heap'
+mode = 'SAGA' # Choose: 'SAGA','SAESL','NN','MCF' Old:'Brute','DFS','Relax','Brute_iter','mcf','SPEKF','Relax-heap','SPEKF-heap'
 #crb_min =np.array([1e-2, 1e-2]) # Empirical variance of Range, Doppler (For LLR)
 hscale= np.array([2,2]) # Growth in thresold (squared for fitting threshold)
 incr = 2 # Increment in association iterations
