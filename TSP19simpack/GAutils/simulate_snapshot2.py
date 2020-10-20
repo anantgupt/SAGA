@@ -132,9 +132,9 @@ def run_snapshot(scene, sensors, snr, cfgp, seed =int.from_bytes(os.urandom(4), 
         for s, sensor in enumerate(sensors):
             for t, target in enumerate(scene):
                 [cr[t,s], cd[t,s]] = pcrlb.ZZBrv(sensor, target)
-# Convert to position, Vel bounds
-    crb_conv = pcrlb.CRBconverter()
-    [_,_,_,_,crbp, crbv] = crb_conv.get_CRBposvel_from_rd(cr, cd, sensors, scene)
+# # Convert to position, Vel bounds
+#     crb_conv = pcrlb.CRBconverter()
+#     [_,_,_,_,crbp, crbv] = crb_conv.get_CRBposvel_from_rd(cr, cd, sensors, scene)
 #    [St_er[f,:], KF_er[f,:], Auto_er[f,:], sig_indx, sig_indx_auto, track_var, y_est_sig, vy_est_sig] = am.compute_asc_error(signatures, scene, Nsig, sensors) # compute error metrics
     results={'RDerror':np.array(rd_error),
              'RDpack':rde_pack,
@@ -142,7 +142,9 @@ def run_snapshot(scene, sensors, snr, cfgp, seed =int.from_bytes(os.urandom(4), 
     'runtime': runtime,
     'loc': gr_centers,
     'crbrd':np.stack([cr.T**2, cd.T**2],axis=-1),
-    'crbpv': np.stack([np.array(crbp)**2, np.array(crbv)**2],axis=-1),
+    # 'crbpv': np.stack([np.array(crbp)**2, np.array(crbv)**2],axis=-1),
+    'crbr':cr,
+    'crbd':cd,
     'glen': glen,
     'garda': garda_sel,
     'PVerror': pv_error}

@@ -19,11 +19,12 @@ from GAutils import PCRLB as pcrlb
 class FMCWprms:
     c = 3e8  # Speed of light
 
-    def __init__(self, B=0.5e9, Ts=1 / 82e4, fc=6e10, Ni=64, Nch=64): # was 150M, 1.28M (1m, 0.7816m/s); (0.5G,0.82M)->(0.3m,0.5m/s)
+    def __init__(self, B=0.3e9, Ts=1 / 41e4, fc=6e10, Ni=32, Nch=32): # was 150M, 1.28M (1m, 0.7816m/s); (0.5G,0.82M)->(0.3m,0.5m/s)
         self.fc = fc
         self.B = B
         self.Ts = Ts
         self.Ni = Ni
+
         self.Nch = Nch
         self.ss = B / Ts / Ni
         self.tf = Nch * Ni * Ts
@@ -191,8 +192,9 @@ class SignatureTracks: # collection of associated ranges[], doppler[] & estimate
         # Get constants
         Z = cls.Zdict[Ns-2]
         Wi = cls.Widict[Ns-2]
+        ZWZ = np.linalg.multi_dot([Z.T, Wi, Z])
         # Main estimator
-        u_vec = Z.T @ Wi @ Z @ L/(L.T @ Z.T @ Wi @ Z @ L)
+        u_vec = ZWZ @ L/np.linalg.multi_dot([L.T, ZWZ, L])
         # rd fitting
         v_hat = -Me @ u_vec # v_x estimate
         M1var = (np.sum( CRB * np.array([dn**2, rn**2]).T,1) 
@@ -313,7 +315,8 @@ class SignatureTracks: # collection of associated ranges[], doppler[] & estimate
             mode='ls'
         if mode=='ls':
             # Main estimator
-            u_vec = Z.T @ Wi @ Z @ L/(L.T @ Z.T @ Wi @ Z @ L)
+            ZWZ = np.linalg.multi_dot([Z.T, Wi, Z])
+            u_vec = ZWZ @ L/np.linalg.multi_dot([L.T ,ZWZ, L])
             # rd fitting
             v_hat = -Me @ u_vec # v_x estimate
             M1var = (np.sum( CRB * np.array([cls.d**2, cls.r**2]).T,1) 

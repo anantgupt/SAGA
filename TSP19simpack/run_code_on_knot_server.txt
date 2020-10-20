@@ -1,0 +1,3 @@
+Steps to run code on knot
+1. Activate environment with source ~/.bashrc
+2. qsub -V agupta_job

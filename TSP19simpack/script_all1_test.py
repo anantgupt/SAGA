@@ -36,13 +36,14 @@ def main():
     parser.add_argument('--N_cpu', default=-1, type=int, help='CPU Count')
     parser.add_argument('--N_avg', default=50, type=int, help='Monte-Carlo iterations')
     parser.add_argument('--pmiss', default=0.05, type=float, help='Miss probability')
-    parser.add_argument('--save_dir', default='paper_plots', type=str, help='Results save directory')
+    parser.add_argument('--save_dir', default='paper_plots1', type=str, help='Results save directory')
 
     args = parser.parse_args()
 
     datef =('results'+str(date.today().month)+str(date.today().day)
         +'_'+str(datetime.now().hour)+str(datetime.now().minute))
         # +str(np.random.randint(100))+args.mode+'/fig_')
+    save_dir = args.save_dir
     cfg.Nf = args.N_avg # was 50
     cfg.N_cpu = (args.N_cpu)
     
@@ -68,10 +69,10 @@ def main():
     cfg.sep_th = args.sep_th
 
     ##################
-    # Nob vs SNR
+    '''# Nob vs SNR
     Nob_rng2 = [1,10, 20, 30]
     set_it(1, snr_rng, [0,2,4,5],[rob_std, Nsens_std, swidth_std, pmiss_std])
-    run_it(save_dir+'/Fig3_PVRD/fig_', Nob_rng2, 'snr','Nob')
+    run_it(save_dir+'/Fig3_PVRD/fig_', Nob_rng2, 'snr','Nob')'''
     ##################
     for i in range(2):
         if (i==1):
@@ -82,7 +83,7 @@ def main():
         run_it(save_dir+'/Fig4_OSPA/'+mode_dic[i]+'/fig_', snr_rng2, 'Nob','snr')
         #################
         pmiss_rng = np.linspace(0,0.8,9)
-        # Rob vs Pmiss
+        '''# Rob vs Pmiss
         set_it(5, pmiss_rng, [1,3,4,2],[snr_std, Nob_std, swidth_std,Nsens_std])
         run_it(save_dir+'/Fig5_Pmiss/'+mode_dic[i]+'/fig_',[0,1,2,4,8],'pmiss','rob') 
         #################
@@ -90,7 +91,7 @@ def main():
         pmiss_std2 = 0.05
         # # Rob vs Nob 
         set_it(3, Nob_rng, [1,2,4,5],[snr_std, Nsens_std, swidth_std, pmiss_std2])
-        run_it(save_dir+'/Fig6_Complexity/'+mode_dic[i]+'/fig_', rob_rng2,'Nob','rob')
+        run_it(save_dir+'/Fig6_Complexity/'+mode_dic[i]+'/fig_', rob_rng2,'Nob','rob')'''
         # ###############
         Nsens_rng2 = np.array([4,5,6,7,8,10,12])
         # Rob vS Nsens
@@ -105,12 +106,12 @@ def main():
         run_it(save_dir+'/Fig7_8_SOTA/'+mode_dic[i]+'/fig_', pmiss_rng2,'Nob','pmiss')
 
 #     ####################
-    cfg.mode = mode_dic[0]
+    '''cfg.mode = mode_dic[0]
     Nob_rng2 = [10, 20]
     Nsens_rng3 = [4,6,8,10,12,16]
     # Nob vS Nsens
     set_it(2, Nsens_rng3, [0,1,4,5],[rob_std, snr_std, swidth_std,pmiss_std3])
-    run_it(save_dir+'/Fig10_DFT/fig_', Nob_rng2,'Nsens','Nob')
+    run_it(save_dir+'/Fig10_DFT/fig_', Nob_rng2,'Nsens','Nob')'''
 #     ################
    
    
@@ -121,13 +122,13 @@ def main():
     # SNR vS Nob
     set_it(3, Nob_rng, [0,2,4,5],[rob_std, Nsens_std, swidth_std,pmiss_std])
     run_it(save_dir+'/Fig9_DFT/fig_DFT_', snr_rng2,'Nob','snr')
+    '''
     ################
     Nob_rng2 = [10, 20]
     Nsens_rng3 = [4,6,8,10,12,16]
     # Nob vS Nsens
     set_it(2, Nsens_rng3, [0,1,4,5],[rob_std, snr_std, swidth_std,pmiss_std3])
-    run_it(save_dir+'/Fig10_DFT/fig_DFT_', Nob_rng2,'Nsens','Nob')
-
+    run_it(save_dir+'/Fig10_DFT/fig_DFT_', Nob_rng2,'Nsens','Nob')'''
     
 if __name__ == "__main__":
     __spec__ = None

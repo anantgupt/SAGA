@@ -58,6 +58,8 @@ def main():
     Ndet = np.zeros((cfg.Ninst,cfg.Nf))
     plt.close('all')
     #for plt_n in range(1,6): plt.figure(plt_n), plt.clf()
+    # Convert to position, Vel bounds
+    crb_conv = pcrlb.CRBconverter()
 
     #%%
     # Arrange sensors in worst case to build up a scene
@@ -116,9 +118,10 @@ def main():
             # snapshot_results = []
             argarray = [(scenea[f][0:Nob], sensors, snra[inst], cfgp, seeda[f]) for f in range(Nf)]
             snapshot_results = pool.starmap(sim2.run_snapshot, argarray)
-        for f in tqdm(range(Nf),desc='Averaging', leave=False):  # Loop over frames
+        for f in range(Nf):#,desc='Averaging', leave=False):  # Loop over frames
             if cfg.parallel:
                 snapshot_result = snapshot_results[f]
+                snapshot_result['runtime'] = snapshot_result['runtime']/N_cpu
             else:
                 snapshot_result = sim2.run_snapshot(scenea[f][0:Nob], sensors, snra[inst], cfgp, seeda[f])
             
@@ -140,6 +143,9 @@ def main():
             crb1[inst,:Nsens,:Nob] += snapshot_result['crbrd']/Nf #crbt
             Nmiss1[inst,:Nsens] += Nmisst
             Nfa1[inst,:Nsens] += Nfat
+
+            [_,_,_,_,crbp, crbv] = crb_conv.get_CRBposvel_from_rd(snapshot_result['crbr'], snapshot_result['crbd'], sensors, scenea[f][0:Nob])
+            snapshot_result['crbpv'] = np.stack([np.array(crbp)**2, np.array(crbv)**2],axis=-1)
 
             crbpv[inst,:Nob] += snapshot_result['crbpv']/Nf
             PVerror[inst,:Nob] += snapshot_result['PVerror']/Nf

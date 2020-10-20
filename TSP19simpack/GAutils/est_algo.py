@@ -162,13 +162,14 @@ class estRD():
             etz = np.exp(-omg1*tz)
         #    yrc = np.conj(yr)
             g2 = np.conj(g1)
-            zy = etz @ yr
-            yx = yr @ etx
+            zy = np.matmul(etz,yr) # etz @ yr
+            yx = np.matmul(yr, etx) # yr @ etx
             der1z = 2*np.real(g2*(zy @ (etx*tx)))/cls.rN
             der1x = 2*np.real(g2*((etz*tz) @ yx))/cls.rN
             der2z = -2*np.real(g2 * zy @ (etx*(tx**2)))/cls.rN + 2*(np.abs(g1)**2)*(N0**2+2)/12
-            der2x = -2*np.real(g2 * (etz*tz*tz) @ yx)/cls.rN + 2*(np.abs(g1)**2)*(N1**2+2)/12
-            der2xz = -2*np.real(g2 * np.linalg.multi_dot([etz*tz, yr, (etx*tx)]))/cls.rN
+            der2x = -2*np.real(g2 * (etz*tz**2) @ yx)/cls.rN + 2*(np.abs(g1)**2)*(N1**2+2)/12
+            # der2xz = -2*np.real(g2 * np.linalg.multi_dot([etz*tz, yr, (etx*tx)]))/cls.rN
+            der2xz = -2*np.real(g2 * (etz*tz) @ yr @ (etx*tx))/cls.rN
             # Update freq
             detder = der2x*der2z-der2xz**2
         #    dw = np.array([(der1x*der2z-der1z*der2xz),(der1z*der2x-der1x*der2xz)])/detder
