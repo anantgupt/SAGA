@@ -1,0 +1,10 @@
+Timer unit: 1e-07 s
+
+Total time: 1.79471 s
+File: C:\Users\gupta\Documents\GitHub\SAGA\TSP19simpack\GAutils\objects.py
+Function: get_newfit_error at line 180
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+   180                                                   return Ami
+

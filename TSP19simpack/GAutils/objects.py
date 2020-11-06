@@ -117,6 +117,8 @@ class SignatureTracks: # collection of associated ranges[], doppler[] & estimate
     # Precompute Constant matrices
     Zdict =dict()
     Widict =dict()
+    udict = {}
+    CRBdict = {}
     for Ninp in range(cfg.max_sensors): # Ninp in [2,Ns] NOTE: Should not be fixed
         Z_mat = np.eye(Ninp+2)
         Zt = Z_mat[0:-1,:]-Z_mat[1:,:] # consecutive
@@ -176,25 +178,37 @@ class SignatureTracks: # collection of associated ranges[], doppler[] & estimate
             Am1[:,:] += F_mat
         Ami = np.linalg.inv(Am1)
         return Ami
-        
+    @profile    
     def get_newfit_error(cls, sensors, rnew, dnew, gnew, sidnew):
         # Reports geometry fitting error for given R,D pair
-        rn = np.hstack((cls.r, rnew))
-        dn = np.hstack((cls.d, dnew))
-        gn = np.hstack((cls.g, gnew))
+        rn = np.append(cls.r, rnew)
+        dn = np.append(cls.d, dnew)
+        # rn = np.hstack((cls.r, rnew))
+        # dn = np.hstack((cls.d, dnew))
+        # gn = np.hstack((cls.g, gnew))
         Me = rn*dn
         Me2 = rn*rn
         Ns = len(rn)
-        sindx_new = np.hstack((cls.sindx,sidnew))
+        sindx_new = np.append(cls.sindx,sidnew)
+        keyval = tuple(sindx_new)
         L = np.array([sensors[si].x for si in sindx_new])
-        CRB = np.array([sensors[si].getnominalCRB() for i, si in enumerate(sindx_new)]) # Using nominal
+        if keyval in cls.CRBdict:
+            CRB=cls.CRBdict[keyval]
+        else:
+            CRB = np.array([sensors[si].getnominalCRB() for i, si in enumerate(sindx_new)]) # Using nominal
+            cls.CRBdict[keyval] = CRB
 #        CRB = np.array([sensors[si].getCRB()/(abs(gn[i])**2) for i, si in enumerate(sindx_new)]) # Using est. gain
         # Get constants
         Z = cls.Zdict[Ns-2]
         Wi = cls.Widict[Ns-2]
-        ZWZ = np.linalg.multi_dot([Z.T, Wi, Z])
-        # Main estimator
-        u_vec = ZWZ @ L/np.linalg.multi_dot([L.T, ZWZ, L])
+        
+        if keyval in cls.udict:
+            u_vec=cls.udict[keyval]
+        else:
+            ZWZ = np.linalg.multi_dot([Z.T, Wi, Z])
+            # Main estimator
+            u_vec = ZWZ @ L/np.linalg.multi_dot([L.T, ZWZ, L])
+            cls.udict[keyval] = u_vec
         # rd fitting
         v_hat = -Me @ u_vec # v_x estimate
         M1var = (np.sum( CRB * np.array([dn**2, rn**2]).T,1) 
@@ -415,19 +429,32 @@ class SignatureTracks: # collection of associated ranges[], doppler[] & estimate
         E1 = (x_hat**2+y_est**2 - 2*x_hat*(L) + (L*L)) - Me2
         E2 = ((x_hat*v_hat + y_est*vy_est) -v_hat*(L)) - Me 
         return np.vstack((E1,E2)), point
-    
+    # @profile
     def get_state(cls, sensors):
         Me = cls.r * cls.d
         Me2 = cls.r * cls.r
         Ns = cls.N
+        keyval = tuple(cls.sindx)
         L = np.array([sensors[si].x for si in cls.sindx])
-        CRB = np.array([sensors[si].getnominalCRB() for (si, gi) in zip(cls.sindx, cls.g)])
+        if keyval in cls.CRBdict:
+            CRB=cls.CRBdict[keyval]
+        else:
+            CRB = np.array([sensors[si].getnominalCRB() for si in cls.sindx]) # Using nominal
+            cls.CRBdict[keyval] = CRB
+#       
+        # CRB = np.array([sensors[si].getnominalCRB() for (si, gi) in zip(cls.sindx, cls.g)])
 #        CRB = np.array([sensors[si].getCRB()/(abs(gi)**2) for (si, gi) in zip(cls.sindx, cls.g)])
         # Get constants
         Z = cls.Zdict[Ns-2]
         Wi = cls.Widict[Ns-2]
         # Main estimator
-        u_vec = Z.T @ Wi @ Z @ L/(L.T @ Z.T @ Wi @ Z @ L)
+        if keyval in cls.udict:
+            u_vec=cls.udict[keyval]
+        else:
+            ZWZ = np.linalg.multi_dot([Z.T, Wi, Z])
+            # Main estimator
+            u_vec = ZWZ @ L/np.linalg.multi_dot([L.T, ZWZ, L])
+            cls.udict[keyval] = u_vec
         # rd fitting
         v_hat = -Me @ u_vec # v_x estimate
         M1var = (np.sum( CRB * np.array([cls.d**2, cls.r**2]).T,1) 

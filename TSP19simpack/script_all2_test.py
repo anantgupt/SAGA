@@ -70,7 +70,7 @@ def main():
 
     # ========== EXPERIMENTAL ===============
     # cfg.n_Rc = [1, 2] # default [1, 2]
-    cfg.parallel = True
+    cfg.parallel = False
     # cfg.estalgo = 2
     ##################
     '''# Nob vs SNR
@@ -81,13 +81,13 @@ def main():
     for i in range(1):
         if (i==1):
             cfg.mode = mode_dic[i]
-        snr_rng2 = [0] #[-15, -10, 0]
+        snr_rng2 = [-10] #[-15, -10, 0]
         # # SNR vS Nob
         set_it(3, Nob_rng, [0,2,4,5],[rob_std, Nsens_std, swidth_std, pmiss_std])
         run_it(save_dir+'/Fig4_OSPA/'+mode_dic[i]+'/fig_', snr_rng2, 'Nob','snr')
-        #################
+        '''#################
         pmiss_rng = np.linspace(0,0.8,9)
-        '''# Rob vs Pmiss
+        # Rob vs Pmiss
         set_it(5, pmiss_rng, [1,3,4,2],[snr_std, Nob_std, swidth_std,Nsens_std])
         run_it(save_dir+'/Fig5_Pmiss/'+mode_dic[i]+'/fig_',[0,1,2,4,8],'pmiss','rob') 
         #################

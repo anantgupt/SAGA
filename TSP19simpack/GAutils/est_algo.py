@@ -6,6 +6,7 @@ Estimation algorithms for extracting Range, Doppler
 from numpy import unravel_index
 import numpy as np
 from GAutils import objects as obt
+from numba import jit
 
 def meth2(y, sensors, Nob, osf=[16, 16], pfa=1e-3, eps=0.005):
     garda = []
@@ -135,7 +136,7 @@ class estRD():
         tau = (
                 cls.sensor.meas_std**2 ) * (np.log(N2) - np.log(np.log(1/(1-pfa))))
         return np.sqrt(tau)
-    
+
     def refine_all(cls, gard, Nr, ord_flag=0):
         for cref in range(Nr[1]):
             if ord_flag:
@@ -146,7 +147,62 @@ class estRD():
                 cls.refine_one(gard, Nr[0], idx)
         return
     
+    # @profile
     def refine_one(cls, gard, Nr, idx):#optimized
+        for _ in range(Nr): # Repeat Nr times
+            yr= cls.y
+            r1, d1, g1 = gard.r[idx],gard.d[idx], gard.g[idx]
+            N0, N1 = cls.N0, cls.N1
+            rf, df = cls.rf, cls.df
+            omg2 = 2*np.pi*r1/ rf / (N1) # Fast time omega
+            omg1 = 2*np.pi*d1/ df / (N0) # Slow time omega    
+            # Rescale g to get correct recon. (uncentered, )
+            g1 = g1*np.exp(1j*(N0/2*omg1+N1/2*omg2)) # Uncomment
+        
+            tx, tz = cls.tx, cls.tz
+            etx = np.exp(-omg2*tx)
+            etz = np.exp(-omg1*tz)
+        #    yrc = np.conj(yr)
+            g2 = np.conj(g1)
+            zy = etz @ yr
+            yx = yr @ etx
+            der2z = -2*np.real(g2 * np.inner(zy, (etx*(tx**2))))/cls.rN + 2*(np.abs(g1)**2)*(N0**2+2)/12
+            der2x = -2*np.real(g2 * np.inner((etz*tz**2) , yx))/cls.rN + 2*(np.abs(g1)**2)*(N1**2+2)/12
+            # der2xz = -2*np.real(g2 * np.linalg.multi_dot([etz*tz, yr, (etx*tx)]))/cls.rN
+            if (der2x >0) or (der2z > 0):
+                der2xz = -2*np.real(g2 * (etz*tz) @ yr @ (etx*tx))/cls.rN
+                der1z = 2*np.real(g2*np.inner(zy, (etx*tx)))/cls.rN
+                der1x = 2*np.real(g2*np.inner((etz*tz), yx))/cls.rN
+            else:
+                break
+            # Update freq
+            detder = der2x*der2z-der2xz**2
+            if der2x > 0:
+                omg1new = omg1 - (der1x*der2z-der1z*der2xz)/detder
+            else:
+                   omg1new = omg1 # Do random pert. here
+                # omg1 = omg1 - np.sign(der2x)*(1/4)*(2*np.pi/N0)*np.random.rand(1)
+            if der2z > 0:
+                omg2new = omg2 - (der1z*der2x-der1x*der2xz)/detder
+            else:
+               omg2new = omg2
+                # omg2 = omg2 - np.sign(der2z)*(1/4)*(2*np.pi/N1)*np.random.rand(1)
+        
+            gard.r[idx] = omg2new * rf * (N1) /(2*np.pi)
+            # Flip angular frequency, NOTE: remove if causes problems
+            omg1new = np.sign(np.pi-omg1new)*np.minimum(omg1,2*np.pi-omg1new)
+            gard.d[idx] = omg1new * df * (N0) / (2*np.pi)
+        
+            etx2 = np.exp(-omg2new*(tx+1j*N1/2))
+            etz2 = np.exp(-omg1new*(tz+1j*N0/2))
+            new_g = ( g1*(np.vdot(etx,etx2)*np.vdot(etz,etz2))/yr.size 
+                    + np.linalg.multi_dot([etz2, yr, (etx2)])/cls.rN )
+            cls.y = yr + (g1*np.outer(np.conj(etz),np.conj(etx)) 
+                        - new_g*np.outer(np.conj(etz2),np.conj(etx2)))/cls.rN
+            gard.g[idx] = new_g
+        return
+    
+    def refine_one_all(cls, gard, Nr, idx):#rev3
         for _ in range(Nr): # Repeat Nr times
             yr= cls.y
             r1, d1, g1 = gard.r[idx],gard.d[idx], gard.g[idx]
@@ -196,9 +252,8 @@ class estRD():
             cls.y = yr + (g1*np.outer(np.conj(etz),np.conj(etx)) 
                         - new_g*np.outer(np.conj(etz2),np.conj(etx2)))/cls.rN
             gard.g[idx] = new_g
-        return
-    
-    def refine_one2(cls, gard, Nr, idx):#slow
+        return    
+    def refine_one2(cls, gard, Nr, idx):#rev2 slow
         yr= cls.y
         r1, d1, g1 = gard.r[idx],gard.d[idx], gard.g[idx]
         N0, N1 = cls.N0, cls.N1
@@ -245,7 +300,7 @@ class estRD():
         gard.g[idx] = np.sum(np.conj(x_ref)* y_recon)
         cls.y = y_recon - gard.g[idx]*x_ref 
         return
-    def refine_one3(cls, gard, Nr, idx):#old
+    def refine_one3(cls, gard, Nr, idx):#rev1 old
         yr,mcs= cls.y,cls.mcs
         r1, d1, g1 = gard.r[idx],gard.d[idx], gard.g[idx]
         (N0, N1) = yr.shape

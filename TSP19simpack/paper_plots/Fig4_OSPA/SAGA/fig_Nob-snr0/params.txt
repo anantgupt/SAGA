@@ -5,7 +5,7 @@ Nsens=[6 6 6 6]
 Noba=[ 1 11 21 31]
 Sensor Width=[4 4 4 4]
 Sensor BW=300000000.0Hz,R_res=0.5m, D_res=1.0009765625m/s 
-Monte Carlo Iterations=50
+Monte Carlo Iterations=4
 mode=SAGA
 Tlen=3
 Pmiss=[0 0 0 0]
