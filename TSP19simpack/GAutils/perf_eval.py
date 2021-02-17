@@ -40,8 +40,8 @@ def compute_ospa(true_scene0, est_scene, sensors, gardat=[], loc_wt=[1,1,1,1], p
     # compute the OSPA metric
     total_loc, ospa_loc = 0,0
     err_pos, err_vel =0,0
-    c = 5*np.sqrt(min([np.sum(sensor.getnominalCRB()) for sensor in sensors])) # previous
-    cpos = 10*np.sqrt(min([np.sum(sensor.getnominalCRB()[:2]) for sensor in sensors]))
+    c = 20*np.sqrt(min([np.sum(sensor.getnominalCRB()) for sensor in sensors])) # previous was 5
+    cpos = 20*np.sqrt(min([np.sum(sensor.getnominalCRB()[:2]) for sensor in sensors])) # was 10
     c_pen = 1 # Penalty for miss: 1
     n = max(len(est_scene), len(true_scene)) # Total est count
     m = min(len(est_scene), len(true_scene)) # Count for err_pos, err_vel
@@ -77,6 +77,7 @@ def compute_ospa(true_scene0, est_scene, sensors, gardat=[], loc_wt=[1,1,1,1], p
     err_pos, err_vel = np.sqrt(float(err_pos)/m) , np.sqrt(float(err_vel)/m)
     ospa_err = ( float(ospa_loc + max(len(true_scene)-ntrue,0)* (c_pen**p)) / n)**(1/p) # If n>m count extra misses
     ospa_tuple = np.array([ospa_err,err_loc, len(est_scene)-len(true_scene), ntrue, err_pos]) 
+    print(cpos, c_pen,c)
     return ospa_tuple, PVerror
     
 def compute_pos_error(ob1, ob2, loc_wt):

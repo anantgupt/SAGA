@@ -75,10 +75,12 @@ def run_snapshot(scene, sensors, snr, cfgp, seed =int.from_bytes(os.urandom(4), 
     rd_wt = cfgp['rd_wt'] # Range doppler relative weighting for likelihood, NLLS (Selection purposes)
 
      #%% Graph Algo
-    G1,runtime[4] = grpr.make_graph(garda_sel, sensors, 0) # was cfgp['rob']
+    t=time.time()
+    G1,runtime[4] = grpr.make_graph(garda_sel, sensors, 0) # was cfgp['rob'] # Total edges before geom. pruning
 #        runtime[4] = sum([grpr.get_Ntracks(nd) for nd in G1[0]])# All tracks in graph
-    runtime[4] = sum([len(nd.lkf) for g in G1 for nd in g]) # No of edges, get V from glen
-    runtime[5],_ = grpr.get_BruteComplexity(G1)
+    runtime[1] = time.time() - t
+    runtime[5] = sum([len(nd.lkf) for g in G1 for nd in g]) # No of edges, get V from glen
+    # runtime[5],_ = grpr.get_BruteComplexity(G1)
 
     if cfgp['mode']=='MCF':
         min_gsigs, glen, runtime[6:8] = mcft.get_mcfsigs(garda_sel, sensors, cfgp)
@@ -87,19 +89,15 @@ def run_snapshot(scene, sensors, snr, cfgp, seed =int.from_bytes(os.urandom(4), 
     elif cfgp['mode']=='SAESL':
         min_gsigs, glen, runtime[6:8] = mle.iterative_prune_pht(garda_sel, sensors, cfgp, sum(len(g.r) for g in garda_sel)//2)
     else:
-        t=time.time()
-        G0,runtime[4] = grpr.make_graph(garda_sel, sensors, 0) # No skip connection
-        runtime[1] = time.time() - t
         if cfg.scene_plots:
             [graph_sigs, Ngsig]=grpr.enum_graph_sigs(G1, sensors)
             pr.plot_graph(G1, graph_sigs, sensors, rd_wt, 12, plt)
-        min_gsigs, glen, runtime[6:8] = grpr.get_minpaths(G0, sensors, cfgp['mode'], cfgp)
+        min_gsigs, glen, runtime[6:8] = grpr.get_minpaths(G1, sensors, cfgp['mode'], cfgp)
     runtime[2] = time.time() - t # Total time (Make graph+traverse graph)
 
     t = time.time()
     for sig in min_gsigs:
-        _,raw_ob = sig.get_rd_fit_error(sensors, cfgp['fu_alg'])
-        [dob, nlls_var] = gm.gauss_newton(sig, sensors,[raw_ob.x,raw_ob.y,raw_ob.vx,raw_ob.vy] , cfgp['gn_steps'], rd_wt)#lm_refine, gauss_newton, huber
+        [dob, nlls_var] = gm.gauss_newton(sig, sensors, sig.state_end.mean , cfgp['gn_steps'], rd_wt)#lm_refine, gauss_newton, huber
         sig.state_end.mean = dob
     runtime[3] = time.time() - t # Time to Refine
 

@@ -55,12 +55,18 @@ class MinCostFlowTracker:
 		return (num, self._fib(num))
 
 	def _calc_cost_enter(self):
+		# print(-math.log(self.P_enter))
 		return -math.log(self.P_enter)
+		# return -self._calc_cost_detection(self.beta)*len(self._detections)/2
 
 	def _calc_cost_exit(self):
+		# print(-math.log(self.P_exit))
 		return -math.log(self.P_exit)
+		# return -self._calc_cost_detection(self.beta)*len(self._detections)/2
+
 
 	def _calc_cost_detection(self, beta):
+		# print(math.log(beta / (1.0 - beta)))
 		return math.log(beta / (1.0 - beta))
 
 	def _calc_cost_link(self, rect1, rect2, sensors, garda, eps=1e-7):
@@ -81,11 +87,13 @@ class MinCostFlowTracker:
 		if trg==None:
 			return 1e7
 		prob_joint = mle.est_prob_joint(trg, sensors, garda, cfg.rd_wt)
+		# edge_llr = mle.est_edge_negllr(trg, sensors, garda, cfg.rd_wt)
 		self.L3 += 1
 #		print(prob_joint)
 		return -math.log(prob_joint+1e-9)
+		# return edge_llr
 
-	def build_network(self, garda, sensors, h=0, f2i_factor=10000):
+	def build_network(self, garda, sensors, h=0, f2i_factor=100):
 		self.mcf = pywrapgraph.SimpleMinCostFlow()
 		tol = 0.01
 		for image_name, rects in sorted(self._detections.items(), key=lambda x: int(x[0][6:])):
@@ -93,7 +101,6 @@ class MinCostFlowTracker:
 				self.mcf.AddArcWithCapacityAndUnitCost(self._node2id["source"], self._node2id[(image_name, i, "u")], 1, int(self._calc_cost_enter() * f2i_factor))
 				self.mcf.AddArcWithCapacityAndUnitCost(self._node2id[(image_name, i, "u")], self._node2id[(image_name, i, "v")], 1, int(self._calc_cost_detection(rect[4]) * f2i_factor))
 				self.mcf.AddArcWithCapacityAndUnitCost(self._node2id[(image_name, i, "v")], self._node2id["sink"], 1, int(self._calc_cost_exit() * f2i_factor))
-
 			frame_id = self._name2id[image_name]
 			if frame_id == 0:
 				continue
@@ -107,9 +114,9 @@ class MinCostFlowTracker:
 						l1 = math.sqrt((sensors[i_rect[3]].x - sensors[j_rect[3]].x)**2+(sensors[i_rect[3]].y - sensors[j_rect[3]].y)**2) # sensor separation
 						d = sensors[i_rect[3]].fov * l1 + tol # max range delta
 						if abs(i_rect[0]-j_rect[0])<d and abs(i_rect[0]+j_rect[0])>d: # Only add valid links
-	#						print(prev_image_name, i, "v",' -> ' ,image_name, j, "u",' : ', int(self._calc_cost_link(i_rect, j_rect, sensors, garda) * 10))
+							# print(prev_image_name, i, "v"', -> ' ,image_name, j, "u",' : ', int(self._calc_cost_link(i_rect, j_rect, sensors, garda) * f2i_factor))
 							self.mcf.AddArcWithCapacityAndUnitCost(self._node2id[(prev_image_name, i, "v")], self._node2id[(image_name, j, "u")],
-								1, int(self._calc_cost_link(i_rect, j_rect, sensors, garda) * 100))
+								1, int(self._calc_cost_link(i_rect, j_rect, sensors, garda) * f2i_factor))
 
 	def _make_flow_dict(self):
 		self.flow_dict = {}
@@ -173,7 +180,7 @@ class MinCostFlowTracker:
 
 	def _brute_force(self, search_range=100):
 		max_flow = self.mcf.NumNodes() // search_range
-		print("Search: 0 < num_flow <", max_flow)
+		# print("Search: 0 < num_flow <", max_flow)
 
 		optimal_flow = 0
 		optimal_cost = float("inf")
@@ -212,31 +219,40 @@ class MinCostFlowTracker:
 
 	# EXtract using 1 iteration ignoring flow length
 def get_mcfsigs(garda, sensors, cfgp):
-	# Prepare initial detecton results, ground truth, and images
-	# You need to change below
-	detections , tags , images = tools.create_tags(garda, sensors)
-
+	
+	Ns = len(sensors)
 	# Parameters
 	min_thresh = 0
-	P_enter = 0.1
-	P_exit = 0.1
-	beta = 0.5
-	fib_search = True
+	beta = 0.1 # math.exp(-1) # 0.2
+	P_enter = math.exp(math.log(beta/(1-beta))*min(cfgp['rob'],Ns)/Ns/2) #0.1
+	# print(math.exp(math.log(beta/(1-beta))*min(cfgp['rob'],Ns)/2) )#0.1
+	P_exit = math.exp(math.log(beta/(1-beta))*min(cfgp['rob'],Ns)/Ns/2) #0.1
+	fib_search = False # True
+
+	# Prepare initial detecton results, ground truth, and images
+	# You need to change below
+	detections , tags , images = tools.create_tags(garda, sensors, beta)
+	
 	glen = [sum([len(gard.r) for gard in garda])]
-	Ns = len(sensors)
+	
 	# Let's track them!
 	start = time.time()
 	tracker = MinCostFlowTracker(detections, tags, min_thresh, P_enter, P_exit, beta)
 	tracker.build_network(garda, sensors)
+	# print(tracker._calc_cost_enter())
+	# print(tracker._calc_cost_exit())
+	# print(tracker._calc_cost_detection(beta))
 	optimal_flow, optimal_cost = tracker.run(fib=fib_search, search_range=len(sensors))
+	if optimal_flow==0:
+		optimal_flow, optimal_cost = tracker.run(fib=False, search_range=len(sensors))		
 	end = time.time()
 	if False:
 		print("Finished: {} sec".format(end - start))
 		print("Optimal number of flow: {}".format(optimal_flow))
 		print("Optimal cost: {}".format(optimal_cost))
 
-		print("Optimal flow:")
-		print(tracker.flow_dict)
+		# print("Optimal flow:")
+		# print(tracker.flow_dict)
 	sigs = []
 	if optimal_flow>0:
 		for st in tracker.flow_dict['source']:
@@ -254,6 +270,7 @@ def get_mcfsigs(garda, sensors, cfgp):
 			if new_sig.N>=max(2,Ns-cfgp['rob']):
 				new_sig.pid = pida
 				sigs.append(new_sig)
+				# print(new_sig.state_end.mean)#DEBUG
 	if not sigs:
 		for sid, sensor in enumerate(sensors):
 			if sid==0:

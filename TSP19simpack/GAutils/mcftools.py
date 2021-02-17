@@ -72,7 +72,7 @@ def map_id2name(tags):
 #		return iw * ih / ua
 #	else:
 #		return 0.0
-def create_tags(garda, sensors):
+def create_tags(garda, sensors, beta):
 	detections={}
 	images={}
 	tags = {}
@@ -81,7 +81,7 @@ def create_tags(garda, sensors):
 		rects=[]
 		L=len(gard.g)
 		for oid in range(L):
-			rects.append([gard.r[oid], gard.d[oid], gard.g[oid], si, 0.05])# NOTE: Try replacing rect[4] with gard.g[oid]
+			rects.append([gard.r[oid], gard.d[oid], gard.g[oid], si, beta])# NOTE: Try replacing rect[4] with gard.g[oid]
 		detections[image_name] = rects
 		tags[image_name] = [rect[:-1] for rect in rects]
 		images[image_name] = image_name

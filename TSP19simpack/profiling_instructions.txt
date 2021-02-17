@@ -1,0 +1,15 @@
+Line profile:
+1. Add @profile decorator to functions.
+2. Run program as kernprof -l -v script_all2_test.py --N_avg 4
+3. Generate report as kernprof -m -l script_all2_test.py > prof.txt
+* Must remove @profile to run normally
+
+Using gprof2dot
+1. python -m cProfile -o profile.pstats script_all2_test.py
+2. gprof2dot -f pstats profile.pstats | dot -Tsvg -o tree.svg
+
+Using snakeviz
+1. python -m cProfile -o temp.dat <PROGRAM>.py
+2. snakeviz temp.dat
+
+more help: https://stackoverflow.com/questions/582336/how-can-you-profile-a-python-script

@@ -33,23 +33,9 @@ def est_pathllr(sig, sensors, minP=[], rd_wt = cfg.rd_wt, modf=False): # Use ran
     
     if not minP: minP=sig.N
     
-    if False: # sig.N>minP: # Compute geometric cost ignoring weak node(Didn't work)
-        ind_weak = np.argmax(abs(sig.gc))
-        sid_weak = sig.sindx[ind_weak] # Sensor obs with mighest fitting error
-        strong_id = list(range(sig.N))
-        strong_id.remove(ind_weak)
-        part_state, g_cost = sig.get_partialest(sensors, strong_id, abs(sum(sig.gc)), modf)# Updates sig if better path found
-        if abs(g_cost)<abs(sum(sig.gc)): # ONly consider if removing node makes fitting better
-            tpa = part_state.mean
-        else:
-            tpa = sig.state_end.mean
-            sid_weak = -1 # Impossible value
-            g_cost = sum(sig.gc)
-         
-    else:
-        tpa = sig.state_end.mean
-        sid_weak = -1 # Impossible value
-        g_cost = sum(sig.gc)
+    tpa = sig.state_end.mean
+    sid_weak = -1 # Impossible value
+    g_cost = sig.gc
     template = ob.PointTarget(tpa[0],tpa[1],tpa[2],tpa[3])
     for (rp, dp, gp, sid) in zip(sig.r, sig.d, sig.g, sig.sindx):
         if sid !=sid_weak: # Always true
@@ -200,14 +186,37 @@ def est_prob_joint(template, sensors, obs, w=[1,0]): # Link prob cond. over obs.
         if len(gard_obs.r)>0:
             gard = pr.get_gard_true(sensor, template) #gard template
             dR = gard_obs.r- gard.r # Array of est range delta
+            if np.min(dR)>1:
+                continue
             dD = gard_obs.d- gard.d
             ga = gard_obs.g # Array of est gains
-            
-            ind = np.argmin(abs(dR)) # Finds closest point
             crb = np.sqrt(sensor.getnominalCRB())*10# /(abs(ga[ind])**2))
+            ind = np.argmin(abs(dR)) # Finds closest point
+            # ind =  np.argmin(w[0]*(dR/crb[0])**2+w[1]*(dD/crb[1])**2) # Min using weighted cost
+            
             prob = norm.pdf(w[0]*dR/crb[0]) * norm.pdf(w[1]*dD/crb[1])
     #        Bhattacharya distance type prob
             pre += prob[ind]/(eps+sum(prob))
+            den+=1
+    return pre/den
+def est_edge_negllr(template, sensors, obs, w=[1,0]): # Link prob cond. over obs. across all sens
+    pre = 1e-9
+    eps = 1e-7
+    den = 0
+    for s, (sensor, gard_obs) in enumerate(zip(sensors, obs)):
+        if len(gard_obs.r)>0:
+            gard = pr.get_gard_true(sensor, template) #gard template
+            dR = gard_obs.r- gard.r # Array of est range delta
+            dD = gard_obs.d- gard.d
+            ga = gard_obs.g # Array of est gains
+            # if np.min(dR)>1:
+            #     continue
+            ind = np.argmin(abs(dR)) # Finds closest point
+            crb = (sensor.getnominalCRB())*10# /(abs(ga[ind])**2))
+            prob = w[0]*(dR[ind]**2)/crb[0]+w[1]*(dD[ind]**2)/crb[1]
+            # prob = np.min(w[0]*(dR*2)/crb[0]*(1+w[1]*(dD**2)/crb[1]))
+    #        Bhattacharya distance type prob
+            pre += prob
             den+=1
     return pre/den
 

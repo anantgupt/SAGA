@@ -114,3 +114,4 @@ dmypy.json
 .pyre/
 
 results*
+TSP19simpack/pypapi/

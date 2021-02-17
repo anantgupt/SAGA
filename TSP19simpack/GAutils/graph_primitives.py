@@ -72,7 +72,7 @@ def make_graph(garda, sensors, lskp=False, l2p=0):
                             Lp2+=1
                             Lt2+=1+len(sob_k.lkb)
                     k-=1
-    return G, Lt1
+    return G, Lp1
 
 def similar_paths(sob_i, sob_j, sob_k, sensors):# Check if 3 nodes should be on same path or not
     pth =0.01# TODO: How to set this automatically
@@ -162,29 +162,51 @@ def get_l_thres(sig, scale, al_pfa):
     else:
         return scale[0]*chi2.isf(al_pfa, 2*sig.N, loc=0, scale=1)# TODO: Wald statistic is normalized by CRB
 
-def get_order(G, new_nd, target_nds, path, sensors, USE_EKF=False): # Slim version, Oct 2019
+def get_order(G, new_nd, target_nds, path, sensors, USE_EKF=False, upper_thres=np.inf): # Slim version, Oct 2019
     if target_nds:
         target_nds_valid = list(filter(lambda x: ~x.visited, target_nds))
         if path.N<2: # Cannot calculate straigtness with 2 nodes
-            return target_nds_valid, [np.inf for _ in target_nds_valid]
+            return target_nds_valid, [np.inf for _ in target_nds_valid], [None for _ in target_nds_valid]
         else:
             g_cost=[]
+#             for tnd in target_nds_valid:
+#                 if USE_EKF:
+#                     new_cost = path.get_newfit_error_ekf(sensors, tnd.r, tnd.d, tnd.g, tnd.sid)
+#                 else:
+#                     new_cost = path.get_newfit_error(sensors, tnd.r, tnd.d, tnd.g, tnd.sid)
+# #                except ValueError as err:
+# #                    print(err.args)
+# #                    continue # Can print error happened     
+#                 g_cost.append(new_cost) # use trace maybe
+#             srtind = np.argsort(g_cost)
+#             childs = [target_nds[ind] for ind in srtind]
+#             gcs = [g_cost[ind] for ind in srtind]
+            # array processing
+            tnd_dict =  collections.defaultdict(list)
+            tnd_vec = []
+            states_vec = []
             for tnd in target_nds_valid:
+                tnd_dict[tnd.sid].append(tnd)
+            for (tnd_sid, tnd_grp) in tnd_dict.items():
                 if USE_EKF:
-                    new_cost = path.get_newfit_error_ekf(sensors, tnd.r, tnd.d, tnd.g, tnd.sid)
+                    new_costs, new_states, valid_tnd_ids = path.get_newfit_error_nn(sensors, tnd_grp, tnd_sid, upper_thres)
                 else:
-                    new_cost = path.get_newfit_error(sensors, tnd.r, tnd.d, tnd.g, tnd.sid)
-#                except ValueError as err:
-#                    print(err.args)
-#                    continue # Can print error happened     
-                g_cost.append(new_cost) # use trace maybe
-        srtind = np.argsort(g_cost)
-        childs = [target_nds[ind] for ind in srtind]
-        gcs = [g_cost[ind] for ind in srtind]
+                    new_costs, new_states, valid_tnd_ids = path.get_newfit_error_grp(sensors, tnd_grp, tnd_sid, upper_thres)
+                g_cost.extend(new_costs) # use trace maybe
+                tnd_vec.extend([tnd_grp[i] for i in valid_tnd_ids])
+                states_vec.extend(new_states)
+            # print(g_cost)
+            srtind = np.argsort(g_cost)
+            # print(srtind, valid_tnd_ids)
+            childs = [tnd_vec[ind] for ind in srtind]
+            gcs = [g_cost[ind] for ind in srtind]
+            states_sorted = [states_vec[ind] for ind in srtind]
+#               
     else:
         childs=[]
         gcs = []
-    return childs, gcs
+        states_sorted = []
+    return childs, gcs, states_sorted
 
 
 def Brute(G, nd, sig, sel_sigs, pid, sensors, cfgp, scale, minP): # recursive implementation
@@ -364,22 +386,15 @@ def Relax(Gfix, sel_sigs, sensors, glen, cfgp): # Slim version
     for i in range(2):
         lg_thres[1][i]=-np.inf
     while hc<hN and minP>=min_chain_leng:
-#        print(lg_thres)
-        for h in range(cfgp['rob']+1): # was Ns - cfgp['Tlen']+1, range(hN)
-    #        print('Graph has {} nodes.'.format(sum(len(g) for g in G)))
-    #        lg_thres = np.array([[scale[0]*chi2.isf(cfgp['al_pfa'], 2*i, loc=0, scale=1) for i in range(1,Ns+1)],
-    #                    [scale[1]*chi2.isf(cfgp['ag_pfa'], 2*i, loc=0, scale=1) for i in range(1,Ns+1)]])
-            
+        for h in range(cfgp['rob']+1): # was Ns - cfgp['Tlen']+1, range(hN)       
             for i in range(Ns-minP+1):
                 sobs = G[i]
                 for pid, sobc in enumerate(sobs):
-                    # print(L3)
                     sig_origin = ob.SignatureTracks(sobc.r, sobc.d, i, sobc.g)# create new signature
                     L3+=DFS(G, sobc, sig_origin, sel_sigs, [pid], sensors, cfgp, minP, hq, lg_thres, opt=[False,False,False] )
             G, stopping_cr = remove_scc(G, sensors, minP)# Add skip connection
             glen.append(sum(len(g) for g in G))
             if stopping_cr:# Until path of length minP left in Graph
-#                print('Graph Empty',[len(g) for g in G])
                 break
             if 1: # Reduce minP inner loop
                 minP-=1
@@ -390,10 +405,7 @@ def Relax(Gfix, sel_sigs, sensors, glen, cfgp): # Slim version
         lg_thres=[lgt*sc for (lgt,sc) in zip(lg_thres, scale)] # Relax LLR thres outer loop
         if cfgp['mode'][-1]!='2': # Nominal mode
             G = remove_skipedge(G) # NOTE: reset skip edges
-    # Using heap to get leftover targets
-    # if cfgp['mode'][-4:]=='heap':
-    #     # Make dict of remaining nodes keyed by sensor id, r, d
-    #     print('Wrong mode! check config. ')
+
     return glen, L3
 
 def DFS(G, nd, sig, sel_sigs, pid, sensors, cfgp, minP, hq, lg_thres, opt=[True,False,False]): # code cleanup
@@ -402,9 +414,9 @@ def DFS(G, nd, sig, sel_sigs, pid, sensors, cfgp, minP, hq, lg_thres, opt=[True,
     L3 = np.zeros(2) # Count edges visited
     ag_pfa, al_pfa, rd_wt = cfgp['ag_pfa'],cfgp['al_pfa'],cfgp['rd_wt']
     if not nd.visited:# Check if tracks could be joined
-        childs, gcs = get_order(G, nd, nd.lkf, sig, sensors, cfgp['mode']=='NN')
+        childs, gcs, new_states = get_order(G, nd, nd.lkf, sig, sensors, cfgp['mode']=='NN', lg_thres[1][-1])
         L3[0]+=len(childs) # If counting all edges, make 1
-        for (ndc, gcc) in zip(childs, gcs):# Compute costs for all neighbors
+        for (ndc, gcc, state) in zip(childs, gcs, new_states):# Compute costs for all neighbors
             if not path_check(G, sig, pid): break # Added to stop DFS if parent is visited!
             if sig.N>2 and gcc>lg_thres[1][-1]: # SAGA/NN Algo
                 continue
@@ -417,9 +429,9 @@ def DFS(G, nd, sig, sel_sigs, pid, sensors, cfgp, minP, hq, lg_thres, opt=[True,
                 if cfgp['mode']=='NN':
                     ndc_sig.add_update_ekf(ndc.r, ndc.d, ndc.g, ndc.sid, sensors)
                 else:
-                    ndc_sig.add_update3(ndc.r, ndc.d, ndc.g, ndc.sid, sensors)
+                    ndc_sig.add_update3(ndc.r, ndc.d, ndc.g, ndc.sid, sensors, state, gcc)
                 if ndc_sig.N>2:
-                    g_cost = sum(ndc_sig.gc)
+                    g_cost = ndc_sig.gc
                     if g_cost>lg_thres[1][-1]:
                         continue
                 L3+=DFS(G, ndc, ndc_sig, sel_sigs, pnext, sensors, cfgp, minP, hq, lg_thres, opt)
@@ -433,7 +445,7 @@ def DFS(G, nd, sig, sel_sigs, pid, sensors, cfgp, minP, hq, lg_thres, opt=[True,
                     L3[1]+=1 # If ONLY Counting paths, make 1, ELSE 0
 #                    print(minP, l_cost, lg_thres[0][sig.N-1], g_cost, lg_thres[1][sig.N-1], pid ) #USE THIS TO DEBUG
                     deg_free = min(sig.N+len(sensors)-minP-1, len(sensors)-1)
-                    if l_cost < lg_thres[0][deg_free] and abs(sum(sig.gc))<lg_thres[1][deg_free]: # Based on CRLB
+                    if l_cost < lg_thres[0][deg_free] and abs(sig.gc)<lg_thres[1][deg_free]: # Based on CRLB
                         sig.llr = l_cost
                         sig.pid = pid
                         sel_sigs.append(sig)
@@ -450,7 +462,6 @@ def update_G(G, sindx, pid, vis, used):
 def path_check(G, sig, pid, allow_breaks=False):# Allows crossing paths
     flag = 0
     for (ob_id, cur_sid) in zip(pid, sig.sindx):
-#        print(cur_sid, ob_id)
         if G[cur_sid][ob_id].visited:
             if not allow_breaks:
                 return False

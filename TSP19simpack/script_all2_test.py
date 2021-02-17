@@ -36,7 +36,7 @@ def main():
     parser.add_argument('--N_cpu', default=-1, type=int, help='CPU Count')
     parser.add_argument('--N_avg', default=50, type=int, help='Monte-Carlo iterations')
     parser.add_argument('--pmiss', default=0.05, type=float, help='Miss probability')
-    parser.add_argument('--save_dir', default='paper_plots', type=str, help='Results save directory')
+    parser.add_argument('--save_dir', default='paper_plots3', type=str, help='Results save directory')
 
     args = parser.parse_args()
 
@@ -53,7 +53,7 @@ def main():
     rob_rng = [0,1,2, 20]
     snr_rng = np.hstack((np.linspace(-26,-22,3),np.linspace(-20,-10,11, dtype='int'),np.linspace(-8,10,10))) 
     Nsens_rng = [4,5,6,8,10,12]
-    Nob_rng = np.linspace(1,31,4, dtype='int') 
+    Nob_rng = np.linspace(1,2,2, dtype='int') 
     swidth_rng = [0.25,0.5,1,2,4,6,8]
     
     rob_std = (args.rob)
@@ -70,7 +70,7 @@ def main():
 
     # ========== EXPERIMENTAL ===============
     # cfg.n_Rc = [1, 2] # default [1, 2]
-    cfg.parallel = False
+    cfg.parallel = True
     # cfg.estalgo = 2
     ##################
     '''# Nob vs SNR
@@ -78,19 +78,20 @@ def main():
     set_it(1, snr_rng, [0,2,4,5],[rob_std, Nsens_std, swidth_std, pmiss_std])
     run_it(save_dir+'/Fig3_PVRD/fig_', Nob_rng2, 'snr','Nob')'''
     ##################
-    for i in range(1):
-        if (i==1):
-            cfg.mode = mode_dic[i]
-        snr_rng2 = [-10] #[-15, -10, 0]
-        # # SNR vS Nob
-        set_it(3, Nob_rng, [0,2,4,5],[rob_std, Nsens_std, swidth_std, pmiss_std])
-        run_it(save_dir+'/Fig4_OSPA/'+mode_dic[i]+'/fig_', snr_rng2, 'Nob','snr')
-        '''#################
-        pmiss_rng = np.linspace(0,0.8,9)
-        # Rob vs Pmiss
-        set_it(5, pmiss_rng, [1,3,4,2],[snr_std, Nob_std, swidth_std,Nsens_std])
-        run_it(save_dir+'/Fig5_Pmiss/'+mode_dic[i]+'/fig_',[0,1,2,4,8],'pmiss','rob') 
+    # for i in range(1):
+    #     if (i==1):
+    #         cfg.mode = mode_dic[i]
+    #     snr_rng2 = [0] #[-15, -10, 0]
+    #     # Nob_rng = np.linspace(1,6,2, dtype='int') 
+    #     # # SNR vS Nob
+    #     set_it(3, Nob_rng, [0,2,4,5],[rob_std, Nsens_std, swidth_std, pmiss_std])
+    #     run_it(save_dir+'/Fig4_OSPA/'+mode_dic[i]+'/fig_', snr_rng2, 'Nob','snr')
         #################
+        # pmiss_rng = np.linspace(0,0.8,9)
+        # # Rob vs Pmiss
+        # set_it(5, pmiss_rng, [1,3,4,2],[snr_std, Nob_std, swidth_std,Nsens_std])
+        # run_it(save_dir+'/Fig5_Pmiss/'+mode_dic[i]+'/fig_',[0,1,2,4,8],'pmiss','rob') 
+    '''#################
         rob_rng2 = [0,1,2,20]
         pmiss_std2 = 0.05
         # # Rob vs Nob 
@@ -102,12 +103,16 @@ def main():
         set_it(2, Nsens_rng2, [1,3,4,5],[snr_std, Nob_std, swidth_std,pmiss_std3])
         run_it(save_dir+'/Fig11_12_Nsens/'+mode_dic[i]+'/fig_', [0,1,2,4,7,20],'Nsens','rob')'''
 
-    '''# # # Pmiss vs Nob 
+    # # # Pmiss vs Nob 
+    Nob_rng = np.linspace(1,41,6, dtype='int') 
+    # Nob_rng = np.linspace(2,4,2, dtype='int') 
     for i in range(4):
         cfg.mode = mode_dic[i]
-        pmiss_rng2 = [0,0.05,0.2,0.4]
+        cfg.scene_plots = False
+        cfg.movie = False
+        pmiss_rng2 = [0.05] # [0,0.05,0.2,0.4]
         set_it(3, Nob_rng, [0,1,2,4],[rob_std, snr_std, Nsens_std, swidth_std])
-        run_it(save_dir+'/Fig7_8_SOTA/'+mode_dic[i]+'/fig_', pmiss_rng2,'Nob','pmiss')'''
+        run_it(save_dir+'/Fig7_8_SOTA/'+mode_dic[i]+'/fig_', pmiss_rng2,'Nob','pmiss')
 
 #     ####################
     '''cfg.mode = mode_dic[0]

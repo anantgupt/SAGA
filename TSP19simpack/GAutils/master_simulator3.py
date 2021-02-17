@@ -33,7 +33,7 @@ def main():
 #if 1: # For spyder     
     Nsensa = cfg.Nsensa
     # Naming algorithm names & Plotting
-    alg_name = ['Estimation', 'Graph Init.','Association','Refinement','All_edges','Brute',cfg.mode+'-Edges',cfg.mode+'-LLR']
+    alg_name = ['Estimation', 'Graph Init.','Association','Refinement','All edges','Pruned edges',cfg.mode+'-F(A) evals',cfg.mode+'-L(A) evals']
     
     Nf = cfg.Nf
     Noba=cfg.Noba
@@ -191,12 +191,12 @@ def main():
     plt.figure(11)
     plt.subplot(1,2,1)
     plt.bar(range(3), np.mean(runtime[4:7], axis=1), tick_label=alg_name[4:7]),plt.grid(True)
-    plt.ylabel('Number of Tracks visited'),plt.title('Association Complexity')
+    plt.ylabel('Number of Chains visited'),plt.title('Association Complexity')
     plt.subplot(1,2,2)
     pltn={}
     for i in range(4,8):
-        pltn[i]= plt.plot(rng_used, runtime[i,:], label = alg_name[i]),plt.grid(True)
-    plt.legend(),plt.xlabel(cfg.xlbl),plt.ylabel('Number of Tracks visited'),plt.title('Association Complexity')
+        pltn[i]= plt.plot(rng_used, runtime[i,:]/Nf, label = alg_name[i]),plt.grid(True)
+    plt.legend(),plt.xlabel(cfg.xlbl),plt.ylabel('Number of Chains visited'),plt.title('Association Complexity')
     plt.yscale('log')
     fig = plt.gcf()
     fig.set_size_inches(8.8,4.8)

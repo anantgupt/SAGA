@@ -1,103 +1,128 @@
+Running 0/1
+Using CPU count =  4
+Processing took 105.97115182876587 s.
+Directory  paper_plots/Fig4_OSPA/SAGA/fig_Nob-snr0  already exists
+Processing+Plotting took 118.90578651428223 s.
+Wrote profile results to script_all2_test.py.lprof
 Timer unit: 1e-07 s
 
-Total time: 41.302 s
-File: C:\Users\gupta\Documents\GitHub\SAGA\TSP19simpack\GAutils\est_algo.py
-Function: refine_one at line 148
-
-Line #      Hits         Time  Per Hit   % Time  Line Contents
-==============================================================
-   148                                                   return
-
-Total time: 16.1982 s
+Total time: 36.73 s
 File: C:\Users\gupta\Documents\GitHub\SAGA\TSP19simpack\GAutils\objects.py
-Function: get_newfit_error at line 179
+Function: get_newfit_error at line 180
 
 Line #      Hits         Time  Per Hit   % Time  Line Contents
 ==============================================================
-   179                                               @profile    
-   180                                               def get_newfit_error(cls, sensors, rnew, dnew, gnew, sidnew):
-   181                                                   # Reports geometry fitting error for given R,D pair
-   182     34200   13194171.0    385.8      8.1          rn = np.hstack((cls.r, rnew))
-   183     34200   10365614.0    303.1      6.4          dn = np.hstack((cls.d, dnew))
-   184     34200    9870916.0    288.6      6.1          gn = np.hstack((cls.g, gnew))
-   185     34200    1225276.0     35.8      0.8          Me = rn*dn
-   186     34200     761121.0     22.3      0.5          Me2 = rn*rn
-   187     34200     572347.0     16.7      0.4          Ns = len(rn)
-   188     34200    9508028.0    278.0      5.9          sindx_new = np.hstack((cls.sindx,sidnew))
-   189     34200    4019415.0    117.5      2.5          L = np.array([sensors[si].x for si in sindx_new])
-   190     34200   13890779.0    406.2      8.6          CRB = np.array([sensors[si].getnominalCRB() for i, si in enumerate(sindx_new)]) # Using nominal
-   191                                           #        CRB = np.array([sensors[si].getCRB()/(abs(gn[i])**2) for i, si in enumerate(sindx_new)]) # Using est. gain
-   192                                                   # Get constants
-   193     34200     782580.0     22.9      0.5          Z = cls.Zdict[Ns-2]
-   194     34200     577194.0     16.9      0.4          Wi = cls.Widict[Ns-2]
-   195     34200   15198620.0    444.4      9.4          ZWZ = np.linalg.multi_dot([Z.T, Wi, Z])
-   196                                                   # Main estimator
-   197     34200   23723151.0    693.7     14.6          u_vec = ZWZ @ L/np.linalg.multi_dot([L.T, ZWZ, L])
-   198                                                   # rd fitting
-   199     34200    2543898.0     74.4      1.6          v_hat = -Me @ u_vec # v_x estimate
-   200     34200   14392253.0    420.8      8.9          M1var = (np.sum( CRB * np.array([dn**2, rn**2]).T,1) 
-   201     34200    7091648.0    207.4      4.4          + np.prod(CRB,1) )
-   202                                           #        lb_vx_std = np.sqrt(M1var @ (u_vec**2)) # Std. dev in estimating vx
-   203                                                   # Fitting Error compuation (For each target)
-   204     34200    5355641.0    156.6      3.3          N_mat = Me @ Z.T + (v_hat *L) @(Z.T) # eta
-   205     34200    1360705.0     39.8      0.8          V_mat = N_mat @ Wi  # Optimal dual var.
-   206                                                   
-   207                                                   # r2 fitting
-   208     34200    3650981.0    106.8      2.3          x_hat = -(Me2 - ( L**2 )) @ u_vec/2
-   209     34200    5637471.0    164.8      3.5          M2var = (4*CRB[:,0] * np.array( rn**2) + CRB[:,0]**2)# Ignoring higher order terms
-   210                                           #        lb_x_std = np.sqrt(M2var @ (u_vec**2)/4) # std. dev in estimating x
-   211                                                   # Fitting Error compuation (For each target)
-   212     34200    6280995.0    183.7      3.9          N_mat2 = Me2 @ Z.T + 2*x_hat *L @ (Z.T) - ( L*L ) @ Z.T # eta
-   213     34200    1282045.0     37.5      0.8          U_mat = N_mat2 @ Wi # Optimal dual var.
-   214                                           
-   215     34200    8234914.0    240.8      5.1          gc = ((cfg.rd_wt[0]*(V_mat@Z/2)**2/M1var + cfg.rd_wt[1]*((U_mat@Z/2)**2)/M2var))
-   216     34200    2462465.0     72.0      1.5          return sum(gc)
+   180                                               @profile
+   181                                               def get_newfit_error(cls, sensors, rnew, dnew, gnew, sidnew):
+   182                                                   # Reports geometry fitting error for given R,D pair
+   183     59388   23400516.0    394.0      6.4          rn = np.hstack((cls.r, rnew))
+   184     59388   18254249.0    307.4      5.0          dn = np.hstack((cls.d, dnew))
+   185     59388   17485784.0    294.4      4.8          gn = np.hstack((cls.g, gnew))
+   186     59388    2206570.0     37.2      0.6          Me = rn*dn
+   187     59388    1457461.0     24.5      0.4          Me2 = rn*rn
+   188     59388    1136147.0     19.1      0.3          Ns = len(rn)
+   189     59388   16713537.0    281.4      4.6          sindx_new = np.hstack((cls.sindx,sidnew))
+   190     59388    2965627.0     49.9      0.8          keyval = tuple(sindx_new)
+   191     59388    6338713.0    106.7      1.7          L = np.array([sensors[si].x for si in sindx_new])
+   192     59388    6894647.0    116.1      1.9          H = np.array([[sensors[si].x, 1] for si in sindx_new])
+   193     59388    1788606.0     30.1      0.5          if keyval in cls.CRBdict:
+   194     59346    1396147.0     23.5      0.4              CRB=cls.CRBdict[keyval]
+   195                                                   else:
+   196        42      24372.0    580.3      0.0              CRB = np.array([sensors[si].getnominalCRB() for i, si in enumerate(sindx_new)]) # Using nominal
+   197        42       1380.0     32.9      0.0              cls.CRBdict[keyval] = CRB
+   198                                                   
+   199     59388    1267324.0     21.3      0.3          if keyval in cls.Hidict:
+   200     59346    1223426.0     20.6      0.3              Hi=cls.Hidict[keyval]
+   201     59346    8014129.0    135.0      2.2              u_vec = (H @ Hi)[0:,0]
+   202                                                   else:
+   203                                                       # Main estimator
+   204        42      33451.0    796.5      0.0              Hi =  np.linalg.inv(H.T @ H)
+   205        42       5423.0    129.1      0.0              u_vec = (H @ Hi)[0:,0]
+   206        42       1303.0     31.0      0.0              cls.Hidict[keyval] = Hi
+   207                                           
+   208                                                   # Main estimator
+   209                                                   # rd fitting
+   210     59388    4893453.0     82.4      1.3          v_hat = -Me @ u_vec # v_x estimate
+   211     59388   25356585.0    427.0      6.9          M1var = (np.sum( CRB * np.array([dn**2, rn**2]).T,1) 
+   212     59388   11881396.0    200.1      3.2          + np.prod(CRB,1) )
+   213                                                   # Fitting Error compuation (For each target)
+   214     59388   93546731.0   1575.2     25.5          FA1 = Me - np.linalg.multi_dot([H,Hi,H.T,Me])
+   215                                                   
+   216                                                   # r2 fitting
+   217     59388    3390688.0     57.1      0.9          Me2_centered = (Me2 - ( L**2 ))
+   218     59388    5564921.0     93.7      1.5          x_hat = -Me2_centered @ u_vec/2
+   219     59388   10285620.0    173.2      2.8          M2var = (4*CRB[:,0] * np.array( rn**2) + CRB[:,0]**2)# Ignoring higher order terms
+   220                                                   # Fitting Error compuation (For each target)
+   221     59388   87400015.0   1471.7     23.8          FA2 = Me2_centered - np.linalg.multi_dot([H,Hi,H.T,Me2_centered])
+   222                                                   
+   223     59388    9927205.0    167.2      2.7          gc = ((cfg.rd_wt[0]*(FA1)**2/M1var + cfg.rd_wt[1]*((FA2)**2)/M2var))
+   224     59388    4444317.0     74.8      1.2          return sum(gc)
 
-Total time: 8.26747 s
+Total time: 22.023 s
 File: C:\Users\gupta\Documents\GitHub\SAGA\TSP19simpack\GAutils\objects.py
-Function: get_state at line 418
+Function: get_state at line 425
 
 Line #      Hits         Time  Per Hit   % Time  Line Contents
 ==============================================================
-   418                                               @profile
-   419                                               def get_state(cls, sensors):
-   420     17114     801257.0     46.8      1.0          Me = cls.r * cls.d
-   421     17114     442252.0     25.8      0.5          Me2 = cls.r * cls.r
-   422     17114     261947.0     15.3      0.3          Ns = cls.N
-   423     17114    2027682.0    118.5      2.5          L = np.array([sensors[si].x for si in cls.sindx])
-   424     17114    6808240.0    397.8      8.2          CRB = np.array([sensors[si].getnominalCRB() for (si, gi) in zip(cls.sindx, cls.g)])
-   425                                           #        CRB = np.array([sensors[si].getCRB()/(abs(gi)**2) for (si, gi) in zip(cls.sindx, cls.g)])
-   426                                                   # Get constants
-   427     17114     385552.0     22.5      0.5          Z = cls.Zdict[Ns-2]
-   428     17114     293030.0     17.1      0.4          Wi = cls.Widict[Ns-2]
-   429                                                   # Main estimator
-   430     17114    6347165.0    370.9      7.7          u_vec = Z.T @ Wi @ Z @ L/(L.T @ Z.T @ Wi @ Z @ L)
-   431                                                   # rd fitting
-   432     17114     976478.0     57.1      1.2          v_hat = -Me @ u_vec # v_x estimate
-   433     17114    7357083.0    429.9      8.9          M1var = (np.sum( CRB * np.array([cls.d**2, cls.r**2]).T,1) 
-   434     17114    3572984.0    208.8      4.3          + np.prod(CRB,1) )
-   435                                           #        lb_vx_std = np.sqrt(M1var @ (u_vec**2)) # Std. dev in estimating vx
-   436                                                   # Fitting Error compuation (For each target)
-   437     17114    2578365.0    150.7      3.1          N_mat = Me @ Z.T + (v_hat *L) @(Z.T) # eta
-   438     17114     656822.0     38.4      0.8          V_mat = N_mat @ Wi  # Optimal dual var.
-   439     17114    8137170.0    475.5      9.8          g_nu = np.sqrt(np.sum(N_mat * V_mat) - np.sum((V_mat@Z)**2)/4)
-   440                                                   
-   441                                                   # r2 fitting
-   442     17114    1806161.0    105.5      2.2          x_hat = -(Me2 - ( L**2 )) @ u_vec/2
-   443     17114    2945457.0    172.1      3.6          M2var = (4*CRB[:,0] * np.array( cls.r**2) + CRB[:,0]**2)# Ignoring higher order terms
-   444                                           #        lb_x_std = np.sqrt(M2var @ (u_vec**2)/4) # std. dev in estimating x
-   445                                                   # Fitting Error compuation (For each target)
-   446     17114    3242234.0    189.4      3.9          N_mat2 = Me2 @ Z.T + 2*x_hat *L @ (Z.T) - ( L*L ) @ Z.T # eta
-   447     17114     639760.0     37.4      0.8          U_mat = N_mat2 @ Wi # Optimal dual var.
-   448     17114    7822420.0    457.1      9.5          g_nu2 = np.sqrt(np.sum(N_mat2 * U_mat) - np.sum((U_mat@Z)**2)/4)
-   449     17114    4573268.0    267.2      5.5          cls.gc = ((cfg.rd_wt[0]*(V_mat@Z/2)**2/M1var + cfg.rd_wt[1]*((U_mat@Z/2)**2)/M2var))
-   450                                                   
-   451     17114     909733.0     53.2      1.1          xsa = x_hat - L
-   452     17114    8012014.0    468.2      9.7          y_est = np.sqrt(abs(np.mean(Me2 - xsa **2))) # TODO: handle negative value properly
-   453     17114    6196097.0    362.0      7.5          vy_est = np.mean(Me - v_hat*xsa) / y_est # Estimated using other estimates
-   454                                                   
-   455     17114    1087398.0     63.5      1.3          Stn = np.array([x_hat, y_est, v_hat, vy_est])
-   456     17114    3756275.0    219.5      4.5          Pn = np.diag([g_nu, g_nu2])
-   457     17114     798360.0     46.6      1.0          new_state = State(Stn, Pn)
-   458     17114     239532.0     14.0      0.3          return new_state
+   425                                               @profile
+   426                                               def get_state(cls, sensors):
+   427     35060    1725008.0     49.2      0.8          Me = cls.r * cls.d
+   428     35060    1003609.0     28.6      0.5          Me2 = cls.r * cls.r
+   429     35060     624110.0     17.8      0.3          Ns = cls.N
+   430     35060     614822.0     17.5      0.3          sindx_new = cls.sindx
+   431     35060    1768194.0     50.4      0.8          keyval = tuple(sindx_new)
+   432     35060    3818797.0    108.9      1.7          L = np.array([sensors[si].x for si in cls.sindx])
+   433     35060    4183503.0    119.3      1.9          H = np.array([[sensors[si].x, 1] for si in sindx_new])
+   434     35060    1064247.0     30.4      0.5          if keyval in cls.CRBdict:
+   435     35060     836047.0     23.8      0.4              CRB=cls.CRBdict[keyval]
+   436                                                   else:
+   437                                                       CRB = np.array([sensors[si].getnominalCRB() for i, si in enumerate(sindx_new)]) # Using nominal
+   438                                                       cls.CRBdict[keyval] = CRB
+   439                                                   
+   440     35060     763892.0     21.8      0.3          if keyval in cls.Hidict:
+   441     35060     737910.0     21.0      0.3              Hi=cls.Hidict[keyval]
+   442     35060    4912582.0    140.1      2.2              u_vec = (H @ Hi)[0:,0]
+   443                                                   else:
+   444                                                       # Main estimator
+   445                                                       Hi =  np.linalg.inv(H.T @ H)
+   446                                                       u_vec = (H @ Hi)[0:,0]
+   447                                                       cls.Hidict[keyval] = Hi
+   448                                           
+   449                                                   # Main estimator
+   450                                                   # rd fitting
+   451     35060    3025321.0     86.3      1.4          v_hat = -Me @ u_vec # v_x estimate
+   452     35060   15549725.0    443.5      7.1          M1var = (np.sum( CRB * np.array([cls.d**2, cls.r**2]).T,1) 
+   453     35060    7187324.0    205.0      3.3          + np.prod(CRB,1) )
+   454                                                   # Fitting Error compuation (For each target)
+   455     35060   56755259.0   1618.8     25.8          FA1 = Me - np.linalg.multi_dot([H,Hi,H.T,Me])
+   456                                                   
+   457                                                   # r2 fitting
+   458     35060    2053594.0     58.6      0.9          Me2_centered = (Me2 - ( L**2 ))
+   459     35060    3402438.0     97.0      1.5          x_hat = -Me2_centered @ u_vec/2
+   460     35060    6398556.0    182.5      2.9          M2var = (4*CRB[:,0] * np.array( cls.r**2) + CRB[:,0]**2)# Ignoring higher order terms
+   461                                                   # Fitting Error compuation (For each target)
+   462     35060   52439382.0   1495.7     23.8          FA2 = Me2_centered - np.linalg.multi_dot([H,Hi,H.T,Me2_centered])
+   463                                                   # Get constants
+   464                                                   # Z = cls.Zdict[Ns-2]
+   465                                                   # Wi = cls.Widict[Ns-2]
+   466                                                   
+   467                                                   # N_mat = Me @ Z.T + (v_hat *L) @(Z.T) # eta
+   468                                                   # V_mat = N_mat @ Wi  # Optimal dual var.
+   469                                                   # g_nu = np.sqrt(np.sum(N_mat * V_mat) - np.sum((V_mat@Z)**2)/4)
+   470                                                   
+   471                                                   # N_mat2 = Me2 @ Z.T + 2*x_hat *L @ (Z.T) - ( L*L ) @ Z.T # eta
+   472                                                   # U_mat = N_mat2 @ Wi # Optimal dual var.
+   473                                                   # g_nu2 = np.sqrt(np.sum(N_mat2 * U_mat) - np.sum((U_mat@Z)**2)/4)
+   474                                                   # cls.gc = ((cfg.rd_wt[0]*(V_mat@Z/2)**2/M1var + cfg.rd_wt[1]*((U_mat@Z/2)**2)/M2var))
+   475     35060    6151410.0    175.5      2.8          cls.gc = ((cfg.rd_wt[0]*(FA1**2)/M1var + cfg.rd_wt[1]*((FA2)**2)/M2var))
+   476                                                   
+   477     35060    2722022.0     77.6      1.2          xsa = x_hat - L
+   478     35060   17044756.0    486.2      7.7          y_est = np.sqrt(abs(np.mean(Me2 - xsa **2))) # TODO: handle negative value properly
+   479     35060   12957831.0    369.6      5.9          vy_est = np.mean(Me - v_hat*xsa) / y_est # Estimated using other estimates
+   480                                                   
+   481     35060    2340800.0     66.8      1.1          Stn = np.array([x_hat, y_est, v_hat, vy_est])
+   482                                                   # Pn = np.diag([g_nu, g_nu2])
+   483     35060    7822425.0    223.1      3.6          Pn = np.diag([1, 1, 1, 1])
+   484     35060    1742730.0     49.7      0.8          new_state = State(Stn, Pn)
+   485     35060     583274.0     16.6      0.3          return new_state
 
