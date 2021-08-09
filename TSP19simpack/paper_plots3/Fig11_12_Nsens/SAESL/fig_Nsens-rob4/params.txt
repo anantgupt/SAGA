@@ -1,0 +1,16 @@
+Robust Level=[4 4 4 4 4 4 4]
+Sep_th=0
+SNR=[-10 -10 -10 -10 -10 -10 -10]
+Nsens=[ 4  5  6  7  8 10 12]
+Noba=[20 20 20 20 20 20 20]
+Sensor Width=[4 4 4 4 4 4 4]
+Sensor BW=500000000.0Hz,R_res=0.3m, D_res=0.50048828125m/s 
+Monte Carlo Iterations=2
+mode=SAESL
+Tlen=3
+Pmiss=[0.05 0.05 0.05 0.05 0.05 0.05 0.05]
+Est_Algo=2
+NOMP: OSPS=[3, 3], n_pfa=0.01, n_Rc=[1, 2]
+GA-DFS: ag_pfa=0.05, al_pfa=0.05
+Relax: hN=20, hscale=[2 2], incr =2
+Misc: rd_wt=[1, 1], fu_alg=ls, gn_steps=5

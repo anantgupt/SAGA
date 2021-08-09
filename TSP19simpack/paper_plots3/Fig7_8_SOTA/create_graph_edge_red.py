@@ -41,6 +41,7 @@ if True:
     height = width*golden_mean
     font_size = 8
     Navg = 4
+    Num_CPU = 4
     pmiss_str='0_05'#'0','0_4','0_05','0_2'
     fig_handle = []
     lbl = ['All edges','Pruned edges','F(A) evals','L(A) evals']
@@ -63,7 +64,7 @@ if True:
         rtm = fig_handle1.axes[1].lines[num].get_data()[1]
         # if num==2: % F(A) evaluations
             # ax.plot(rng, mse1/Navg, color=colr[num], linestyle=lst[1], marker=mkr[num])
-        ax.plot(rng, rtm, color=colr[num], linestyle=lst[num], marker=mkr[num], label=lbl[num])# label=r'$\mathcal{L}(\mathbf{t})$ Ops. '+SOTA[num])
+        ax.plot(rng, rtm*Num_CPU, color=colr[num], linestyle=lst[num], marker=mkr[num], label=lbl[num])# label=r'$\mathcal{L}(\mathbf{t})$ Ops. '+SOTA[num])
     ax.plot(rng, rng*Nsens,'k:',label='Lower bound')
     ax.plot(rng, [sum([float(r+1)**i for i in range(Nsens+1)]) for r in rng],'k--',label='Upper bound')
     ax.legend(loc='best'),ax.grid(True);
