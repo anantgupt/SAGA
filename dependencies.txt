@@ -1,8 +1,8 @@
 Install following dependencies before running example. Suggest to create a new conda environment and install dependencies
 	> numpy, scipy : conda install numpy scipy matplotlib
 	> sympy : conda install sympy
-	> networkx : pip install networkx==2.3
+	> networkx : pip install networkx==2.3 (OPTIONAL)
   	> tqdm : conda install -c conda-forge tqdm
-  	> ipykernel : conda install ipykernel
-  	> ffmpeg : conda install -c conda-forge ffmpeg
-	> ortools:  python -m pip install --upgrade --user ortools
+  	> ipykernel : conda install ipykernel (OPTIONAL)
+  	> ffmpeg : conda install -c conda-forge ffmpeg (OPTIONAL, to save simulation scene as movie)
+	> ortools:  python -m pip install --upgrade --user ortools (OPTIONAL, to compare against Min cost Max flow)
