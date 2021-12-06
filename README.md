@@ -1,9 +1,8 @@
 # SAGA (Spatial data association using Geometric Assistance)
-This repository provides the demo code, Ipython notebooks to illustrate the application of SAGA algorithm for Multi-Sensor, Multi-target association of range-doppler measurements.
 __Single snapshot imaging__ provides timely situational awareness, but can utilize neither platform motion, as in synthetic aperture radar, nor track targets across time, as in Kalman filtering and its variants. Associating measurements with targets becomes a fundamental bottleneck in this setting.
 Our proposed algorithm provides a computationally efficient method for spatial association of single set of unordered range-doppler measurements from  a network of radar sensors. The algorithm is robust to detection anomalies at sensors and achieves order of magnitude lower complexity compared to conventional methods.
-Demo examples are provided for illustration,
 
+This repository provides demo scripts to illustrate the application of SAGA algorithm for Multi-Sensor, Multi-target association of range-doppler measurements,
 1. demo > association.ipynb provides an example of single shot association problem 
 2. demo > association_sweep.ipynb evaluates performance of SAGA algorithm over different number of targets.
 3. Further analysis scripts in the TSPsimpack folder evaluate the performance of core algorithm for different system setting e.g. number of sensors, targets, comparison with conventional algorithms such as Nearest neighbor and Min-cut Max flow. 
