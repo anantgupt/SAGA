@@ -8,10 +8,10 @@ Created on Thu Sep 20 12:27:21 2018
 from __future__ import division
 # Add classes for Extended Targets
 import numpy as np
-from numba import jit
+#from numba import jit
 from GAutils import objects as obt
 import matplotlib as mpl
-import networkx as nx
+# import networkx as nx
 import GAutils.ml_est as mle
 
 def ProcDyms(target, dt, tfas=0):
@@ -55,7 +55,7 @@ def init_random_scene(Nt, sensors, sep_th = 0, seed_val = []):
 #        print('Seed= ',str(seed_val))
         np.random.seed(seed_val)# was 42
     while len(scene)<Nt:
-        newtarget = obt.PointTarget(-8+np.random.rand(1) *16, 2+np.random.rand(1) *10, 20 * np.random.rand(1) -10, 20*np.random.rand(1) -10, 0.1, 1)
+        newtarget = obt.PointTarget(-8+np.random.rand(1) *16, 2+np.random.rand(1) *10, 20 * np.random.rand(1) -10, 20*np.random.rand(1) -10, 0, 1)
         [valid, garda] = check_minsep(scene, sensors, garda, newtarget, sep_th, False)
         if valid: scene.append(newtarget)
     return scene
@@ -94,7 +94,7 @@ def get_pos_from_rd(ri, rj, di, dj, i , j, sensors):
     else:
         return None
 
-@jit(nopython=True, cache = True)
+#@jit(nopython=True, cache = True)
 def triangulation(ri, di, xi, rj, dj, xj):
     sensor_sep= (xj - xi) # should be euclidean distance if y~=0
     # coordinates along axis of ellipse with foci at sensors
@@ -262,8 +262,6 @@ def get_beat(sensor, target, AbsP, rworld = False):
         fbeat = sensor.mcs.ss * tda
         beat = amp * np.exp(1j * 2 * np.pi * (sensor.mcs.fc * tda + tna * fbeat )) / np.sqrt(tfa.size) #- fbeat * tda / 2
         return beat
-    # Debug get_tfa
-#    osf = [16,16]
     else:
         gard_true = get_gard_true(sensor, target, rworld)
         d1 = gard_true.d
@@ -276,17 +274,6 @@ def get_beat(sensor, target, AbsP, rworld = False):
         tfa2 = sensor.mcs.get_tfa(r1 / rf / Ni, d1 / df / Ni / Nch) / sensor.mcs.Ts
         beat2 = amp * np.exp(1j * 2 * np.pi * tfa2) / np.sqrt(tfa2.size)
         return beat2
-#    fft1 = np.fft.fftshift(np.fft.fft2(beat, [Ni*osf[0], Nch*osf[1]]))
-#    ind = unravel_index(np.abs(fft1).argmax(), fft1.shape)
-#    g3 = np.abs(fft1[ind])
-#    r3 = rf * (ind[1] - Ni * osf[1] / 2) / osf[1]
-#    d3 = df * (ind[0] - Nch * osf[0] / 2) / osf[0]
-#    
-#    fft1 = np.fft.fftshift(np.fft.fft2(beat, [Ni*osf[0], Nch*osf[1]]))
-#    ind = unravel_index(np.abs(fft1).argmax(), fft1.shape)
-#    g3 = np.abs(fft1[ind])
-#    r3 = rf * (ind[1] - Ni * osf[1] / 2) / osf[1]
-#    d3 = df * (ind[0] - Nch * osf[0] / 2) / osf[0]
 
 def get_gard_true(sensor, target, rworld = False):#single target,sensor
     # sensor : Reference Sensor

@@ -1,15 +1,12 @@
 #%%
 """
-Kalman Filter
-Implement single shot estimations for multi sensor localization
+Simulate single shot localization using multi sensor data
 April 19, 2018
 """
 import numpy as np
 import time
 import matplotlib.pyplot as plt
 import os
-#mpl.use('TkAgg')
-# import matplotlib.animation as manimation
 from numpy import unravel_index
 # import mpld3
 
@@ -24,7 +21,7 @@ from GAutils import perf_eval as prfe
 from GAutils import config as cfg # Sim parameters
 from GAutils import graph_primitives as grpr
 from GAutils import est_algo as ea
-from GAutils import mcft as mcft
+# from GAutils import mcft as mcft
 
 # import importlib
 # importlib.reload(cfg)

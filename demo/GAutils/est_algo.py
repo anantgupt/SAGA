@@ -6,7 +6,7 @@ Estimation algorithms for extracting Range, Doppler
 from numpy import unravel_index
 import numpy as np
 from GAutils import objects as obt
-from numba import jit
+#from numba import jit
 
 def meth2(y, sensors, Nob, osf=[16, 16], pfa=1e-3, eps=0.005):
     garda = []
@@ -221,7 +221,6 @@ class estRD():
         gard.g[idx] = new_g
         return
     @staticmethod
-    @jit(nopython=True, cache = True)
     def refine_one_all(yr, Nr, omg1, omg2,g1,N0,N1,tx,tz,rN):#rev3
         for _ in range(Nr): # Repeat Nr times 
             # Rescale g to get correct recon. (uncentered, )

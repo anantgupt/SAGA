@@ -14,7 +14,6 @@ from GAutils import ml_est as mle
 # import config as cfg
 from scipy.stats import chi2
 import heapq, collections
-from numba import jit
 
 def make_graph(garda, sensors, lskp=False, l2p=0):
     Ns=len(sensors)

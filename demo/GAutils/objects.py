@@ -16,7 +16,7 @@ from GAutils import proc_est as pr
 from itertools import combinations
 from GAutils import config as cfg
 from GAutils import PCRLB as pcrlb
-from numba import jit
+# from numba import jit
 
 class FMCWprms:
     c = 3e8  # Speed of light
@@ -46,7 +46,7 @@ class PointTarget:
     # Add more parameters for target
     t = 1  # Time variable
 
-    def __init__(self, xw, yw, vx, vy, proc_var=0.1, rcs=1):
+    def __init__(self, xw, yw, vx, vy, proc_var=0, rcs=1):
         self.x = xw
         self.y = yw
         self.vx = vx
@@ -214,8 +214,9 @@ class SignatureTracks: # collection of associated ranges[], doppler[] & estimate
     #     M2var = (4*CRB[:,0] * np.array( rn**2) + CRB[:,0]**2)# Ignoring higher order terms
     #     gc = (cfg.rd_wt[0]*(Me-H@x2.T[0])**2/M1var + cfg.rd_wt[1]*(Me2_centered -H@x2.T[1])/M2var)
     #     return sum(gc)
+    
+    # @jit(nopython=True, cache = True)
     @staticmethod
-    @jit(nopython=True, cache = True)
     def get_newfit_error_group(r_cand, d_cand, Ngrp, r, d, L, CRB, rd_wt, upper_thres):
         # Reports geometry fitting error for given R,D pair
         # Ngrp = len(L)
@@ -484,7 +485,6 @@ class SignatureTracks: # collection of associated ranges[], doppler[] & estimate
         cls.N = cls.N+1
     
     @staticmethod
-    @jit(nopython=True, cache=True)
     def kalman_update(yk, Stp, Pp, yhk, Hk, Rk, sensx):
         Ik = Hk @ Pp @ Hk.T + Rk # Innovation covariance (2x2)
         Kk = Pp @ Hk.T @ np.linalg.inv(Ik) # Kalman Gain (4x2)
